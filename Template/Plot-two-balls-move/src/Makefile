@@ -7,13 +7,22 @@
 
 .PHONY: clean help
 
+# THISMACHINE = $(shell hostname | cut -d. -f3)
+# ENSHUSHITSU = center
+
+# CENT = a
+
 # FC = f90
-FC = g95 -mmacosx-version-min=10.13
-# FC = gfortran
+FC = gfortran
+# ifeq ($(THISMACHINE),$(ENSHUSHITSU))
+#   FC = g95 -mmacosx-version-min=10.13
+# endif
+ifdef C
+  FC = g95 -mmacosx-version-min=10.13
+endif
 
-# FFLAGS = -Wall
-FFLAGS =
-
+test:
+	echo $(FC)
 
 .f90.o:
 	$(FC) $(FFLAGS) -c $<
