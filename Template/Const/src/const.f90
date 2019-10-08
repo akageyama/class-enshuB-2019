@@ -36,34 +36,36 @@ contains
     character(len=*), intent(in) :: string
     real(DR)   , intent(in) :: d
 
-    integer(SI), parameter :: TOTAL_LENGTH = 60
-    character(len=22) :: string_for_value
-    character(len=TOTAL_LENGTH) :: line
+    !integer(SI), parameter :: TOTAL_LENGTH = 60
+    !character(len=22) :: string_for_value
+    !character(len=TOTAL_LENGTH) :: line
 
-    line = repeat('.',TOTAL_LENGTH)
+    !line = repeat('.',TOTAL_LENGTH)
 
-    write(string_for_value,'(1pe22.15)') d
-    line(1:len_trim(string)) = trim(string)
-    line(TOTAL_LENGTH-22:TOTAL_LENGTH) = string_for_value
-    write(SOUT,*) line
+    !write(string_for_value,'(1pe22.15)') d
+    !line(1:len_trim(string)) = trim(string)
+    !line(TOTAL_LENGTH-22:TOTAL_LENGTH) = string_for_value
+    !write(SOUT,*) line
+    print *, string // ': ', d
   end subroutine print_DR
 
 
   subroutine print_SI(string,i)
     character(len=*), intent(in) :: string
-    integer(SI)   , intent(in) :: i
+    integer(SI), intent(in) :: i
 
-    integer(SI), parameter :: TOTAL_LENGTH = 60
-    character(len=12) :: string_for_i01
-    character(len=TOTAL_LENGTH) :: line
+    ! integer(SI), parameter :: TOTAL_LENGTH = 60
+    ! character(len=12) :: string_for_i01
+    ! character(len=TOTAL_LENGTH) :: line
 
-    line = repeat('.', TOTAL_LENGTH)
+    ! line = repeat('.', TOTAL_LENGTH)
 
-    write(string_for_i01,'(a1,i0)') ' ', i ! put a space in front of i
-    line(1:len_trim(string)) = trim(string)
-    line(TOTAL_LENGTH-len_trim(string_for_i01):TOTAL_LENGTH)    &
-       = trim(string_for_i01)
-    write(SOUT,*) line
+    ! write(string_for_i01,'(a1,i0)') ' ', i ! put a space in front of i
+    ! line(1:len_trim(string)) = trim(string)
+    ! line(TOTAL_LENGTH-len_trim(string_for_i01):TOTAL_LENGTH)    &
+    !    = trim(string_for_i01)
+    ! write(SOUT,*) line
+    print *, string // ': ' , i
   end subroutine print_SI
 
 

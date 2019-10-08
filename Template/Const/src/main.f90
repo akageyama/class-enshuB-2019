@@ -10,4 +10,5 @@ program main
   implicit none
 
   call const__print
+  print *, 'SI = ', SI
 end program
