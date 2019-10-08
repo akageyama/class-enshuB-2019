@@ -8,8 +8,8 @@
 .PHONY: clean help
 
 # FC = f90
+# FC = g95
 FC = gfortran
-# FC = g95 -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
 FFLAGS =
@@ -20,29 +20,29 @@ FFLAGS =
 
 
 OBJS = 	const.o  \
-        particle.o  \
+        particles.o  \
         vect2d.o  \
 	main.o
 
-fig: particle.pos.data makefig.plt
+fig: particles.pos.data.00000 makefig.plt
 	gnuplot makefig.plt
 
 runme: main.o
 	$(FC) $(FFLAGS) -o runme $(OBJS)
         
-particle.pos.data: runme
-	./runme  # will save to 'particle.pos.data'
+particles.pos.data.00000: runme
+	./runme  # will save to 'particles.pos.data.?????'
 
 main.o: const.o  \
-        particle.o  \
+        particles.o  \
         vect2d.o
 
-particle.o: const.o  \
-            vect2d.o
+particles.o: const.o  \
+             vect2d.o
 
 help:
 	@echo 'Usage: make fig'
 
 clean:
 	rm -f runme core $(OBJS) *.mod
-	rm -f particle.pos.data
+	rm -f particles.pos.data.?????
