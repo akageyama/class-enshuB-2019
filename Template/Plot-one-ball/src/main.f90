@@ -11,11 +11,9 @@ program main
   use vect2d_m
   implicit none
 
-  type(particle_t) :: p
-
   call const__print
 
-  call p%set(0.3_DR, 0.7_DR)
-  call p%print
-  call p%save
+  call particle__set(0.3_DR, 0.7_DR)
+  call particle__print
+  call particle__save
 end program main

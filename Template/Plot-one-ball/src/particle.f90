@@ -10,43 +10,42 @@ module particle_m
   use vect2d_m
   implicit none
   private
+  public :: particle_t
+  public :: particle__set,  &
+            particle__print,  &
+            particle__save
 
-  type, public :: particle_t
+  type :: particle_t
     type(vect2d_t) :: pos
-  contains
-    procedure :: set => particle__set
-    procedure :: print => particle__print
-    procedure :: save => particle__save
   end type particle_t
+
+  type(particle_t) :: particle
 
 contains
 
-  subroutine particle__print(self)
-    class(particle_t), intent(in) :: self
+  subroutine particle__print
     print *, '(x,y)=(',  &
-                     self%pos%x,  &
+                     particle%pos%x,  &
                      ', ',  &
-                     self%pos%y, &
+                     particle%pos%y, &
                    ')'
   end subroutine particle__print
 
-  subroutine particle__save(self)
-    class(particle_t), intent(in) :: self
+  subroutine particle__save
     logical, save :: first_time = .true.
     integer(SI) :: file_num = 10
     if ( first_time ) then
-      open(file_num, file='particle.pos.data')
+      open(file_num, file='./particle.pos.data', status='new')
       first_time = .false.
     end if
-    write(file_num,*) self%pos%x, self%pos%y
+    write(file_num,*) particle%pos%x, particle%pos%y
   end subroutine particle__save
 
-  subroutine particle__set(self, x, y)
-    class(particle_t), intent(out) :: self
+  subroutine particle__set(x, y)
     real(DR), intent(in) :: x, y
 
-    self%pos%x = x
-    self%pos%y = y
+    particle%pos%x = x
+    particle%pos%y = y
   end subroutine particle__set
 
 end module particle_m
