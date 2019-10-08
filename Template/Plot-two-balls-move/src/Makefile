@@ -8,8 +8,8 @@
 .PHONY: clean help
 
 # FC = f90
-# FC = g95
-FC = gfortran
+FC = g95 -mmacosx-version-min=10.13
+# FC = gfortran
 
 # FFLAGS = -Wall
 FFLAGS =
