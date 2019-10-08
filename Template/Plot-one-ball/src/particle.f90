@@ -35,7 +35,7 @@ contains
     logical, save :: first_time = .true.
     integer(SI) :: file_num = 10
     if ( first_time ) then
-      open(file_num, file='./particle.pos.data', status='new')
+      open(file_num, file='./particle.pos.data')
       first_time = .false.
     end if
     write(file_num,*) particle%pos%x, particle%pos%y
