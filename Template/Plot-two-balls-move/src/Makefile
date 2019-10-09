@@ -1,6 +1,8 @@
 #
 # Makefile for test
 #
+#  make or make FC=gfortran
+#
 
 .SUFFIXES:
 .SUFFIXES: .f90 .o
@@ -13,16 +15,8 @@
 # CENT = a
 
 # FC = f90
-FC = gfortran
-# ifeq ($(THISMACHINE),$(ENSHUSHITSU))
-#   FC = g95 -mmacosx-version-min=10.13
-# endif
-ifdef C
-  FC = g95 -mmacosx-version-min=10.13
-endif
+FC = g95 -mmacosx-version-min=10.13
 
-test:
-	echo $(FC)
 
 .f90.o:
 	$(FC) $(FFLAGS) -c $<
@@ -50,7 +44,9 @@ particles.o: const.o  \
              vect2d.o
 
 help:
-	@echo 'Usage: make fig'
+	@echo 'Usage: Just type "make"'
+	@echo ' Note: Default compiler is "g95 -mmacosx-version-min=10.13"'
+	@echo '       If you have gfortran, type "make FC=gfortran"'
 
 clean:
 	rm -f runme core $(OBJS) *.mod
