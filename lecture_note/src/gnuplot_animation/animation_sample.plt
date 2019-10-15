@@ -7,7 +7,7 @@ set nokey
 max_frame = 9
 
 do for [i=0: max_frame] {
-  plot sprintf("particles.pos.data.%05.0f", i) with p ps 3 pt 7 lc 'light-green'
+  plot sprintf("particles.pos.data.%05.0f", i) with p ps 3 pt 15 lc 'blue'
   pause 0.1
 }
 pause -1
