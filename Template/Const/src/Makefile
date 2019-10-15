@@ -10,6 +10,7 @@
 # FC = f90
 # FC = g95
 FC = gfortran
+FC = g95 -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
 FFLAGS =
@@ -22,13 +23,16 @@ FFLAGS =
 OBJS = 	const.o \
 	main.o
 
+all: runme
+	./runme
+
 runme: main.o
 	$(FC) $(FFLAGS) -o runme $(OBJS)
 
 main.o: const.o
 
 help:
-	echo 'Usage: make && ./runme'
+	echo 'Usage: make'
 
 clean:
 	rm -f runme core $(OBJS) *.mod
