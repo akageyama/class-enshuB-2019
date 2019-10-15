@@ -10,7 +10,7 @@ program main
   use particles_m
   use vect2d_m
   implicit none
-  integer(DI) :: loop
+  integer(SI) :: loop
   integer(DI), parameter :: LOOP_MAX = 500
   real(DR) :: dt = 5.e-2_DR
   real(DR) :: time = 0.0_DR
