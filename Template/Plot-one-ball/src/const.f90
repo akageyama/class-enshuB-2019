@@ -10,7 +10,6 @@ module const_m
   private
   public :: const__print
   public :: SI, DI, SR, DR, PI, TWOPI
-  public :: G_ACCEL
 
   !<< Fortran constants >>!
   integer, parameter :: SI = selected_int_kind(6)

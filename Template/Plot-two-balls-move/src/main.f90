@@ -13,6 +13,7 @@ program main
   integer(DI) :: loop
   integer(DI), parameter :: LOOP_MAX = 500
   real(DR) :: dt = 5.e-2_DR
+  real(DR) :: time = 0.0_DR
 
   type(particles_t) :: particles
 
@@ -23,6 +24,7 @@ program main
 
   do loop = 0, LOOP_MAX
     call particles__move(dt)
+    time = time + dt
     if ( mod(loop, 10)==0 ) then
       call particles__save
     end if
