@@ -23,7 +23,7 @@ program main
   do loop = 0, LOOP_MAX
     call particles__move(time, dt)
     time = time + dt
-    if ( mod(loop, 10)==0 ) then
+    if ( mod(loop, 10_DI)==0 ) then
       call particles__print_energy(time)
       call particles__save
     end if
