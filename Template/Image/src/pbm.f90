@@ -41,7 +41,7 @@ contains
 
 
   subroutine pbm__read(image, filename)
-    class(pbm_t), intent(out) :: image
+    type(pbm_t), intent(out) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j
 
@@ -60,16 +60,17 @@ contains
       end do
     close(FILE_NUM)
 
-    print *,' header=',  image%header
-    print *,'  width=',  image%width, ' height=',image%height
-    do j = 1 , image%height
-      print '(*(i1x))', ( image%bitmap(i,j), i=1, image%width )
-    end do
+    ! print *,' reading file:',  filename
+    ! print *,' header=',  image%header
+    ! print *,' width=',  image%width, ' height=',image%height
+    ! do j = 1 , image%height
+    !   write(*, '(i1,1x)') ( image%bitmap(i,j), i=1, image%width )
+    ! end do
   end subroutine pbm__read
 
 
   subroutine pbm__revert(image)
-    class(pbm_t), intent(inout) :: image
+    type(pbm_t), intent(inout) :: image
 
     integer(SI) :: i, j
     do j = 1 , image%height
@@ -81,15 +82,15 @@ contains
 
 
   subroutine pbm__save(image, filename)
-    class(pbm_t), intent(in) :: image
+    type(pbm_t), intent(in) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j
 
     open(FILE_NUM, file=filename, form='formatted', status='replace')
       write(FILE_NUM,'(a)')     image%header
-      write(FILE_NUM,'(i3xi3)') image%width, image%height
+      write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
       do j = 1 , image%height
-        write(FILE_NUM,'(*(i1x))') ( image%bitmap(i,j), i=1, image%width )
+        write(FILE_NUM,'(i1,1x)') ( image%bitmap(i,j), i=1, image%width )
       end do
     close(FILE_NUM)
   end subroutine pbm__save

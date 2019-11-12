@@ -13,7 +13,6 @@ program main
   type(ppm_t) :: face
   type(pbm_t) :: kobe
 
-  call const__print
   call ppm__read(face,'sample_face.ppm')
   call ppm__convert_grayscale(face)
   call ppm__save(face,'temp_grayscale.ppm')

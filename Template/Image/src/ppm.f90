@@ -42,7 +42,7 @@ contains
 
 
   subroutine ppm__read(image, filename)
-    class(ppm_t), intent(out) :: image
+    type(ppm_t), intent(out) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j
 
@@ -77,7 +77,7 @@ contains
   end subroutine ppm__read
 
   subroutine ppm__convert_grayscale(image)
-    class(ppm_t), intent(inout) :: image
+    type(ppm_t), intent(inout) :: image
 
     integer(SI) :: i, j
     integer(SI) :: gray
@@ -96,18 +96,18 @@ contains
 
 
   subroutine ppm__save(image, filename)
-    class(ppm_t), intent(in) :: image
+    type(ppm_t), intent(in) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j
 
     open(FILE_NUM, file=filename, form='formatted')
-      write(FILE_NUM,'(a)')     image%header
-      write(FILE_NUM,'(i3xi3)') image%width, image%height
-      write(FILE_NUM,'(i3)')    image%max
+      write(FILE_NUM,'(a)')        image%header
+      write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
+      write(FILE_NUM,'(i3)')       image%max
       do j = 1 , image%height
-        write(FILE_NUM,'(*(i3xi3xi3x))') ( image%red  (i,j), &
-                                           image%green(i,j), &
-                                           image%blue (i,j), i=1, image%width )
+        write(FILE_NUM,'(i3,1x,i3,1x,i3,1x)') ( image%red  (i,j), &
+                                                image%green(i,j), &
+                                                image%blue (i,j), i=1, image%width )
       end do
     close(FILE_NUM)
   end subroutine ppm__save
