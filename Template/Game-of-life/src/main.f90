@@ -17,7 +17,6 @@ program main
   call gol__set_by_image('kobe_bitmap.pbm')
   ! call gol__set_by_image('pentomino_bitmap.pbm')
   ! call gol__set_by_image('start.pbm')
-
   ! call gol__set_by_program
 
   call gol__print_summary

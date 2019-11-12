@@ -135,8 +135,9 @@ contains
     integer(SI) :: width  = 101
     integer(SI) :: height = 71
 
-    integer :: i, j, i2, j2
+    integer(SI) :: i, j, i2, j2
     integer(SI) :: some_non_negative_int
+    real(DR) :: random
 
     gol%pbm%header = 'P1'
     gol%pbm%width  = width
@@ -146,12 +147,10 @@ contains
     gol%pbm%bitmap(:,:) = 0  ! default zero
 
     do j = 1 , height
-      j2 = j - height / 2
       do i = 1 , width
-        i2 = i - width / 2
-        if ( abs(i2) < width/4 .and. abs(j2) < height/4 ) then
-          some_non_negative_int = abs( i2 + j2 )
-          gol%pbm%bitmap( i, j ) = mod( some_non_negative_int, 2 )
+        call random_number(random)
+        if ( random > 0.9_DR ) then
+          gol%pbm%bitmap( i, j ) = 1
         end if
       end do
     end do
