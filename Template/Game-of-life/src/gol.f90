@@ -171,7 +171,7 @@ contains
     call pbm__read( gol%pbm, filename )
 
     gol%width  = gol%pbm%width
-    gol%height = gol%pbm%width
+    gol%height = gol%pbm%height
 
     allocate( gol%bitmap_copy( gol%width, gol%height ) )
 
@@ -180,7 +180,6 @@ contains
 
 
   subroutine gol__reset
-
     gol%nstep = 0
     gol%pbm%bitmap(:,:) = 0
   end subroutine gol__reset
