@@ -1,5 +1,11 @@
 # 総合演習B（2019年度）のページ
 
+## Download procedure
+mkdir Today
+cd Today
+git clone https://github.com/akageyama/class-enshuB-2019.git
+
+
 ## 場所
 
 情報基盤センター分館 第2演習室
