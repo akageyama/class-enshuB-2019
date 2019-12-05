@@ -6,7 +6,7 @@
 
 program main
   use const_m
-  use pbm_m
+  use pgm_m
   use gol_m ! game of life
   implicit none
 
