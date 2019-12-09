@@ -66,8 +66,8 @@ contains
 
     print *,' reading file:',  filename
     print *,' header=',  image%header
-    print *,'    max=',  image%max
     print *,' width=',  image%width, ' height=',image%height
+    print *,'    max=',  image%max
     ! do j = 1 , image%height
     !   write(*, '(i1,1x)') ( image%graylevel(i,j), i=1, image%width )
     ! end do
@@ -80,7 +80,7 @@ contains
     integer(SI) :: i, j
     do j = 1 , image%height
       do i = 1 , image%width
-        image%graylevel(i,j) = max - image%graylevel(i,j)
+        image%graylevel(i,j) = image%max - image%graylevel(i,j)
       end do
     end do
   end subroutine pgm__revert
@@ -93,8 +93,8 @@ contains
 
     open(FILE_NUM, file=filename, form='formatted', status='replace')
       write(FILE_NUM,'(a)')        image%header
-      write(FILE_NUM,'(i3)')       image%max
       write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
+      write(FILE_NUM,'(i3)')       image%max
       do j = 1 , image%height
         write(FILE_NUM,'(i1,1x)') ( image%graylevel(i,j), i=1, image%width )
       end do

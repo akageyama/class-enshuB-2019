@@ -7,25 +7,26 @@
 program main
   use const_m
   use pgm_m
-  use gol_m ! game of life
+  use sml_m ! SmoothLife
   implicit none
 
   integer(SI) :: n
 
   call const__print
 
-  call gol__set_by_image('kobe_bitmap.pbm')
+  call sml__set_by_image('sample_face.pgm')
+  ! call gol__set_by_image('kobe_bitmap.pbm')
   ! call gol__set_by_image('pentomino_bitmap.pbm')
   ! call gol__set_by_image('start.pbm')
   ! call gol__set_by_program
 
-  call gol__print_summary
-  call gol__save
+  call sml__print_summary
+  call sml__save
 
   do n = 1 , 200
-    call gol__advance
-    call gol__print_summary
-    call gol__save
+    call sml__advance
+    call sml__print_summary
+    call sml__save
   end do
 
 end program
