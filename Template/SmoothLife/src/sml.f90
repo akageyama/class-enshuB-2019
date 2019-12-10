@@ -18,33 +18,28 @@ module sml_m
   public :: sml__advance,  &
             sml__print_summary,  &
             sml__reset,  &
-            sml__revert,  &
             sml__save,  &
             sml__set_by_image,  &
             sml__set_by_program
 
   type, public :: sml_t
-    type(pgm_t) :: pgm
-    type(pgm_t) :: pgm_copy
     integer(SI) :: nstep
-    integer(SI) :: max
     integer(SI) :: width, height
-    integer, dimension(:,:), allocatable :: graylevel_copy
+    real(DR), dimension(:,:), allocatable :: f
+    real(DR), dimension(:,:), allocatable :: f_copy
   end type sml_t
 
   type(sml_t) :: sml
 
   integer(SI), parameter :: FILE_NUM = 10
 
-  integer(SI), parameter :: PAPER_PARAM_RA_INT = 21
-  integer(SI), parameter :: PAPER_PARAM_RI_INT = 7
+  integer(SI), parameter :: PAPERS_PARAM_RA_INT = 21
+  integer(SI), parameter :: PAPERS_PARAM_RI_INT = 7
 
-  real(DR), parameter :: PAPER_PARAM_RA = real(PAPER_PARAM_RA_INT, DR)
-  real(DR), parameter :: PAPER_PARAM_RI = real(PAPER_PARAM_RI_INT, DR)
+  real(DR), parameter :: PAPERS_PARAM_RA = real(PAPERS_PARAM_RA_INT, DR)
+  real(DR), parameter :: PAPERS_PARAM_RI = real(PAPERS_PARAM_RI_INT, DR)
 
-  real(DR), parameter :: PAPER_PARAM_B = 1.0_DR
-  real(DR), parameter :: PAPER_PARAM_RI_MINUS_B_HALF = PAPER_PARAM_RI - PAPER_PARAM_B/2
-  real(DR), parameter :: PAPER_PARAM_RI_PLUS_B_HALF  = PAPER_PARAM_RI + PAPER_PARAM_B/2
+  real(DR), parameter :: PAPERS_PARAM_B = 1.0_DR
 
 contains
 
@@ -59,8 +54,8 @@ contains
   end subroutine assert
 
 
-  subroutine boundary_condition(pgm)
-    type(pgm_t), intent(inout) :: pgm
+  subroutine boundary_condition(sml)
+    type(sml_t), intent(inout) :: sml
 
     ! Let n = number of boundary overlap
     ! and w = pgm%width
@@ -75,18 +70,18 @@ contains
     integer(SI) :: i, width, height
     integer(SI) :: nbo ! number of grid points for the bounary overlap
 
-    nbo = PAPER_PARAM_RA_INT
-    width  = pgm%width
-    height = pgm%height
+    nbo = PAPERS_PARAM_RA_INT
+    width  = sml%width
+    height = sml%height
 
     call assert( nbo <= width .and. nbo <= height, &
-                "<sml/boundary_condition> nbo too large" )
+                "<sml/boundary_condition> nbo is too large" )
 
     do i = 1 , nbo
-      pgm%graylevel(i,           :) = pgm%graylevel(width-nbo+i, :)
-      pgm%graylevel(width-nbo+i, :) = pgm%graylevel(          i, :)
-      pgm%graylevel(:,           i) = pbm%graylevel(:,height-nbo+i)
-      pbm%graylevel(:,height-nbo+i) = pgm%graylevel(:,           i)
+      sml%f(i,           :) = sml%f(width-nbo+i, :)
+      sml%f(width-nbo+i, :) = sml%f(          i, :)
+      sml%f(:,           i) = sml%f(:,height-nbo+i)
+      sml%f(:,height-nbo+i) = sml%f(:,           i)
     end do
   end subroutine boundary_condition
 
@@ -110,25 +105,27 @@ contains
 
   function distance(i1, j1, i2, j2)
     integer(SI), intent(in) :: i1, j1, i2, j2
-    real(DR) :: x1, y1, x2, y2
 
-    x1 = real(i1, DR)
-    y1 = real(j1, DR)
-    x2 = real(i2, DR)
-    y2 = real(j2, DR)
+    real(DR) :: dx, dy
 
-    distance = sqrt( x1*x1 + x2*y2 )
+    dx = real(i1-i2, DR)
+    dy = real(j1-j2, DR)
+
+    distance = sqrt( dx*dx + dy*dy )
   end function distance
 
 
-  function calc_paper_variable_m(i, j) result(m)
+  function integrate_circle(i, j, rad)
     integer(SI), intent(in) :: i, j
-    real(DR) :: m
+    real(DR), intent(in) :: rad
+    real(DR) :: integrate_circle
 
     integer(SI) :: ii, jj, delta
-    real(DR) :: paper_variable_ell, dsurface, sum_surface, sum_graylevel
+    real(DR) :: papers_variable_ell, darea
+    real(DR) :: sum_area, sum_graylevel
+    real(DR) :: rad_plus_b_half, rad_minus_b_half
 
-    sum_surface   = 0.0_DR    ! reset
+    sum_area      = 0.0_DR    ! reset
     sum_graylevel = 0.0_DR
 
     !      *     |     |     |     |     |
@@ -148,49 +145,54 @@ contains
     !      X-----o-----o-----o-----o--*--o
     !       \                             \
     !        grid:(i,j)                   grid:(i+delta,j)
-    !                    b/2     b/2
-    !                   __|__   __|__
-    !                  /     \ /     \
-    !      +----------x-------O-------x
-    !      |                  |       |
-    !      |<---------------->|       |
-    !      |  PAPER_PARAM_RI          |
-    !      |                          |
-    !      +--------------------------*
-    !      \                          /
-    !       PAPER_PARAM_RI_PLUS_B_HALF
+    !                     b/2     b/2
+    !                    __|__   __|__
+    !                   /     \ /     \
+    !      +-----------x-------O-------x
+    !      |                   |       |
+    !      |<----------------->|       |
+    !      |        rad                |
+    !      |                           |
+    !      +---------------------------*
 
-    delta = int(PAPER_PARAM_RI_PLUS_B_HALF+1.0_DR) ! 1.01 -> delta=2
-                                                   ! 3.14 -> delta=4
-                                                   ! 4.99 -> delta=5
+    delta = int(rad+1) ! rad=1.01 -> delta=2
+                       ! rad=3.14 -> delta=4
+                       ! rad=4.99 -> delta=5
 
-    call assert( PAPER_PARAM_B > 0.0_DR, &
-                "<sml/calc_paper_variable_m> PAPER_PARAM_B <= 0?!" )
+    call assert( rad > 0.0_DR,  &
+                "<sml/integrate_circle> rad <= 0?!" )
+    call assert ( i-delta >= 1,          "i-delta out of range" )
+    call assert ( i+delta <= sml%width,  "i+delta out of range" )
+    call assert ( j-delta >= 1,          "j-delta out of range" )
+    call assert ( j+delta <= sml%height, "j+delta out of range" )
 
-    do jj = j - delta, j + delta
-      do ii = i - delta, i + delta
-        paper_variable_ell = distance(i, j, ii, jj)
-        if ( paper_variable_ell <= PAPER_PARAM_RI_MINUS_B_HALF ) then
-          dsurface = 1.0_DR
-        else if ( PAPER_PARAM_RI_MINUS_B_HALF < paper_variable_ell .and. &
-                  PAPER_PARAM_RI_PLUS_B_HALF >= paper_variable_ell ) then
-          dsurface = (  PAPER_PARAM_RI_PLUS_B_HALF  &
-                      - paper_variable_ell ) / PAPER_PARAM_B
+    rad_plus_b_half  = rad + PAPERS_PARAM_B / 2
+    rad_minus_b_half = rad - PAPERS_PARAM_B / 2
+
+    do jj = j-delta, j+delta
+      do ii = i-delta, i+delta
+        papers_variable_ell = distance(i, j, ii, jj)
+        if ( papers_variable_ell <= rad_minus_b_half ) then
+          darea = 1.0_DR
+        else if ( rad_minus_b_half < papers_variable_ell .and. &
+                  rad_plus_b_half >= papers_variable_ell ) then
+          darea = (  rad_plus_b_half  &
+                   - papers_variable_ell ) / PAPERS_PARAM_B
         else
-          dsurface = 0.0_DR
+          darea = 0.0_DR
         end if
 
-        sum_graylevel = sum_graylevel + sml%graylevel_copy(i,j)*dsurface
-        sum_surface   = sum_surface   + dsurface
+        sum_graylevel = sum_graylevel + sml%graylevel_copy(i,j)*darea
+        sum_area      = sum_area   + darea
       end do
     end do
 
-    call assert( sum_surface > 0.0_DR, &
-                "<sml/calc_paper_variable_m> sum_surfae <= 0?!" )
+    call assert( sum_area > 0.0_DR, &
+                "<sml/calc_papers_variable_m> sum_surfae <= 0?!" )
 
-    m = sum_gralevel / sum_surface
+    integrate_circle = sum_graylevel / sum_area
 
-  end function calc_paper_variable_m
+  end function integrate_circle
 
 
 
@@ -200,44 +202,32 @@ contains
 
 
   subroutine sml__advance
+    integer(SI) :: i, j, nbo
 
-    integer(SI) :: i, j, ii, jj
-    integer(SI) :: neighbours
+    sml%f_copy(:,:) = sml%f(:,:)
 
-    sml%graylevel_copy(:,:) = sml%pgm%graylevel(:,:)
+    ! Let n = number of boundary overlap
+    ! and w = pgm%width
+    !           1     2     3     4   ..  n-1    n    n+1   n+2
+    !           o-----o-----o-----o-- .. --o-----o-----o-----o--...
+    !           |     |     |     |        |     |
+    !           |   To implement the periodic boundary condition,
+    !           |   we assume that n grids are overlapped.
+    !           |     |     |     |        |     |
+    !...--o-----o-----o-----o-----o-- .. --o-----o
+    !    w-n  w-n+1 w-n+2 w-n+3 w-n+4     w-1    w
 
-    call assert( maxval( sml%pgm%graylevel(:,:) ) <= sml%max .and.  &
-                 minval( sml%pgm%graylevel(:,:) ) >= 0,  &
-                 'sml%pgm%graylevel value out of range.' )
-
-    do j = 2, sml%height-1
-      do i = 2, sml%width-1
-        ! 1st step: Count alive cells near the target cell
-        call calc_m(i,j)
-        do jj = j-1, j+1
-          do ii = i-1, i+1
-            if (  (ii/=i) .or. (jj/=j) ) then
-              if ( sml%graylevel_copy(ii,jj)==1 ) then
-                neighbours = neighbours + 1
-              end if
-            end if
-          end do
-        end do
-
-        ! 2nd step: Change the target cell state
-        if ( sml%graylevel_copy(i,j)==1 ) then ! The cell is alive.
-          if ( neighbours < 2 .or. neighbours > 3 ) then
-            sml%pgm%graylevel(i,j) = 0  ! Die unless it has 2 or 3 neighbours
-          end if
-        else  ! The cell is dead.
-          if ( neighbours == 3 ) then
-            sml%pgm%graylevel(i,j) = 1  ! Reborn if it has 3 neighbours
-          end if
-        end if
+    nbo = PAPERS_PARAM_RA_INT
+    do j = nbo+1, sml%height-nbo
+      do i = nbo+1, sml%width-nbo
+        papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI )
+        papers_bariable_n = integrate_circle( i, j, PAPERS_PARAM_RA )  &
+                          - papers_variable_m
+        sml%f(i,j) = papers_function_s( papers_variable_n, papers_variable_m )
       end do
     end do
 
-    call boundary_condition( sml%pgm )
+    call boundary_condition( sml )
 
     sml%nstep = sml%nstep + 1
   end subroutine sml__advance
@@ -253,68 +243,87 @@ contains
   subroutine sml__set_by_program
     integer(SI) :: width  = 101
     integer(SI) :: height = 71
-    integer(SI) :: max = 255
 
     integer(SI) :: i, j, i2, j2
     integer(SI) :: some_non_negative_int
     real(DR) :: random
 
-    sml%pgm%header = 'P2'
-    sml%pgm%max    = max
-    sml%pgm%width  = width
-    sml%pgm%height = height
-    allocate ( sml%pgm%graylevel( width, height ) )
+    sml%nstep  = 0
+    sml%width  = width
+    sml%height = height
+    allocate ( sml%f( width, height ) )
+    allocate ( sml%f_copy( width, height ) )
 
-    sml%pgm%graylevel(:,:) = 0  ! default zero
+    sml%f(:,:) = 0.0_DR  ! default zero
 
     do j = 1 , height
       do i = 1 , width
         call random_number(random)
-        if ( random > 0.9_DR ) then
-          sml%pgm%graylevel( i, j ) = 1
+          sml%f( i, j ) = random
         end if
       end do
     end do
 
-    allocate( sml%graylevel_copy( width, height ) )
-
     sml%width  = width
     sml%height = height
-    sml%max    = max
 
-    call boundary_condition( sml%pgm )
+    call boundary_condition( sml )
   end subroutine sml__set_by_program
 
 
-  subroutine sml__set_by_image(filename)
+  subroutine sml__set_by_image( filename )
     character(len=*), intent(in) :: filename
 
-    call pgm__read( sml%pgm, filename )
+    type(pgm_t) :: pgm
+    integer(SI) :: gray
 
-    sml%width  = sml%pgm%width
-    sml%height = sml%pgm%height
-    sml%max    = sml%pgm%max
+    call pgm__read( pgm, filename )
 
-    allocate( sml%graylevel_copy( sml%width, sml%height ) )
+    sml%nstep  = 0
+    sml%width  = pgm%width
+    sml%height = pgm%height
 
-    call boundary_condition(sml%pgm)
+    allocate( sml%f( sml%width, sml%height ) )
+    allocate( sml%f_copy( sml%width, sml%height ) )
+
+    do j = 1 , sml%height
+      do i = 1 , sml%width
+        gray = pgm%graylevel(i,j)
+        call assert( gray >= 0 .and. gray <= pgm%max,  &
+        sml%f(i,j) = real(gray, DR) / pgm%max
+      end do
+    end do
+
+    call boundary_condition( sml )
   end subroutine sml__set_by_image
 
 
   subroutine sml__reset
     sml%nstep = 0
-    sml%pgm%graylevel(:,:) = 0
+    sml%f(:,:) = 0.0_DR
   end subroutine sml__reset
 
-
-  subroutine sml__revert
-    call pgm__revert( sml%pgm )
-    call boundary_condition(sml%pgm)
-  end subroutine sml__revert
-
-
   subroutine sml__save
-    call pgm__save( sml%pgm,  &
+    type(pgm_t) :: pgm
+    integer(SI) :: widht, height
+    integer(SI), parameter :: PGM_MAX = 255
+
+    width  = sml%width
+    height = sml%height
+
+    pgm%width  = width
+    pgm%height = height
+    pgm%max    = PGM_MAX
+
+    allocate( pgm%graylevel(width, height) )
+
+    do j = 1, height
+      do i = 1 , width
+        pgm%grayscale(i,j) = int(sml%f(i,j)*PGM_MAX)
+      end do
+    end do
+
+    call pgm__save( pgm,  &
                     '../data/' // int_to_str6(sml%nstep) // '.pgm' )
   end subroutine sml__save
 
