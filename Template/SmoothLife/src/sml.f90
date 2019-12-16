@@ -36,9 +36,6 @@ module sml_m
   integer(SI), parameter :: PAPERS_PARAM_RA_INT = 21
   integer(SI), parameter :: PAPERS_PARAM_RI_INT = 7
 
-  real(DR), parameter :: PAPERS_PARAM_RA = real(PAPERS_PARAM_RA_INT, DR)
-  real(DR), parameter :: PAPERS_PARAM_RI = real(PAPERS_PARAM_RI_INT, DR)
-
   real(DR), parameter :: PAPERS_PARAM_B = 1.0_DR
 
 contains
@@ -105,6 +102,7 @@ contains
 
   function distance(i1, j1, i2, j2)
     integer(SI), intent(in) :: i1, j1, i2, j2
+    real(DR) :: distance
 
     real(DR) :: dx, dy
 
@@ -115,18 +113,17 @@ contains
   end function distance
 
 
-  function integrate_circle(i, j, rad)
-    integer(SI), intent(in) :: i, j
-    real(DR), intent(in) :: rad
+  function integrate_circle( i, j, irad )
+    integer(SI), intent(in) :: i, j, irad
     real(DR) :: integrate_circle
 
     integer(SI) :: ii, jj, delta
     real(DR) :: papers_variable_ell, darea
-    real(DR) :: sum_area, sum_graylevel
+    real(DR) :: sum_area, sum_f
     real(DR) :: rad_plus_b_half, rad_minus_b_half
 
-    sum_area      = 0.0_DR    ! reset
-    sum_graylevel = 0.0_DR
+    sum_area = 0.0_DR    ! reset
+    sum_f    = 0.0_DR
 
     !      *     |     |     |     |     |
     !      |     *     |     |     |     |
@@ -151,26 +148,25 @@ contains
     !      +-----------x-------O-------x
     !      |                   |       |
     !      |<----------------->|       |
-    !      |        rad                |
+    !      |       irad                |
     !      |                           |
     !      +---------------------------*
 
-    delta = int(rad+1) ! rad=1.01 -> delta=2
-                       ! rad=3.14 -> delta=4
-                       ! rad=4.99 -> delta=5
+    call assert( irad >= 1,  &
+                 "<sml/integrate_circle> irad = 0 or negative?!" )
+    call assert( irad <= PAPERS_PARAM_RA_INT,  &
+                 "<sml/integrate_circle> irad too large." )
 
-    call assert( rad > 0.0_DR,  &
-                "<sml/integrate_circle> rad <= 0?!" )
-    call assert ( i-delta >= 1,          "i-delta out of range" )
-    call assert ( i+delta <= sml%width,  "i+delta out of range" )
-    call assert ( j-delta >= 1,          "j-delta out of range" )
-    call assert ( j+delta <= sml%height, "j+delta out of range" )
+    call assert ( i-irad >= 1,          "i-irad out of range" )
+    call assert ( i+irad <= sml%width,  "i+irad out of range" )
+    call assert ( j-irad >= 1,          "j-irad out of range" )
+    call assert ( j+irad <= sml%height, "j+irad out of range" )
 
-    rad_plus_b_half  = rad + PAPERS_PARAM_B / 2
-    rad_minus_b_half = rad - PAPERS_PARAM_B / 2
+    rad_plus_b_half  = real(irad,DR) + PAPERS_PARAM_B / 2
+    rad_minus_b_half = real(irad,DR) - PAPERS_PARAM_B / 2
 
-    do jj = j-delta, j+delta
-      do ii = i-delta, i+delta
+    do jj = j-irad, j+irad
+      do ii = i-irad, i+irad
         papers_variable_ell = distance(i, j, ii, jj)
         if ( papers_variable_ell <= rad_minus_b_half ) then
           darea = 1.0_DR
@@ -182,7 +178,7 @@ contains
           darea = 0.0_DR
         end if
 
-        sum_graylevel = sum_graylevel + sml%graylevel_copy(i,j)*darea
+        sum_f = sum_f + sml%f_copy(i,j)*darea
         sum_area      = sum_area   + darea
       end do
     end do
@@ -190,9 +186,69 @@ contains
     call assert( sum_area > 0.0_DR, &
                 "<sml/calc_papers_variable_m> sum_surfae <= 0?!" )
 
-    integrate_circle = sum_graylevel / sum_area
+    integrate_circle = sum_f / sum_area
 
   end function integrate_circle
+
+
+  function papers_function_sigma1( x, a )
+    real(DR), intent(in) :: x, a
+    real(DR) :: papers_function_sigma1
+
+    real(DR), parameter :: PAPERS_PARAM_ALPHA = 0.147_DR
+    real(DR), parameter :: FOUR_OVER_ALPHA = 4.0_DR / PAPERS_PARAM_ALPHA
+    real(DR) :: denominator
+
+    denominator = 1.0_DR + exp( -(x-a)*FOUR_OVER_ALPHA )
+    papers_function_sigma1 = 1.0_DR / denominator
+  end function papers_function_sigma1
+
+
+  function papers_function_sigma2( x, a, b )
+    real(DR), intent(in) :: x, a, b
+    real(DR) :: papers_function_sigma2
+
+    real(DR) :: sigma1a, sigma1b
+
+    sigma1a = papers_function_sigma1( x, a )
+    sigma1b = papers_function_sigma1( x, b )
+
+    papers_function_sigma2 = sigma1a * ( 1.0_DR - sigma1b )
+  end function papers_function_sigma2
+
+
+  function papers_function_sigma_m( x, y, m )
+    real(DR), intent(in) :: x, y, m
+    real(DR) :: papers_function_sigma_m
+
+    real(DR) :: sigma1
+
+    sigma1 = papers_function_sigma1( m, 0.5_DR )
+
+    papers_function_sigma_m = x * ( 1 - sigma1 ) + y * sigma1
+  end function papers_function_sigma_m
+
+
+  function papers_function_s( n, m )
+    real(DR), intent(in) :: n, m
+    real(DR) :: papers_function_s
+
+    real(DR), parameter :: PAPERS_PARAM_B1 = 0.278_DR
+    real(DR), parameter :: PAPERS_PARAM_B2 = 0.365_DR
+    real(DR), parameter :: PAPERS_PARAM_D1 = 0.267_DR
+    real(DR), parameter :: PAPERS_PARAM_D2 = 0.445_DR
+    real(DR) :: sigma_m_1, sigma_m_2
+
+    sigma_m_1 = papers_function_sigma_m( PAPERS_PARAM_B1,  &
+                                         PAPERS_PARAM_D1,  &
+                                         m )
+    sigma_m_2 = papers_function_sigma_m( PAPERS_PARAM_B2,  &
+                                         PAPERS_PARAM_D2,  &
+                                         m )
+    papers_function_s = papers_function_sigma2( n,  &
+                                                sigma_m_1,  &
+                                                sigma_m_2  )
+  end function papers_function_s
 
 
 
@@ -203,6 +259,8 @@ contains
 
   subroutine sml__advance
     integer(SI) :: i, j, nbo
+
+    real(DR) :: papers_variable_m, papers_variable_n
 
     sml%f_copy(:,:) = sml%f(:,:)
 
@@ -220,10 +278,11 @@ contains
     nbo = PAPERS_PARAM_RA_INT
     do j = nbo+1, sml%height-nbo
       do i = nbo+1, sml%width-nbo
-        papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI )
-        papers_bariable_n = integrate_circle( i, j, PAPERS_PARAM_RA )  &
+        papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI_INT )
+        papers_variable_n = integrate_circle( i, j, PAPERS_PARAM_RA_INT )  &
                           - papers_variable_m
-        sml%f(i,j) = papers_function_s( papers_variable_n, papers_variable_m )
+        sml%f(i,j) = papers_function_s( papers_variable_n,  &
+                                        papers_variable_m )
       end do
     end do
 
@@ -234,9 +293,12 @@ contains
 
 
   subroutine sml__print_summary
-    print *, '(width,height) : ', sml%width, sml%height
-    print *, ' nstep: ', sml%nstep
-    print *, ' Num of alive cell: ', sum(sml%pgm%graylevel(:,:))
+    integer(SI) :: width, height, ngrids
+    width  = sml%width
+    height = sml%height
+    ngrids = width * height
+    print *, '(width,height,nstep) : ', width, height, sml%nstep
+    print *, ' Average vital level: ', sum(sml%f(:,:)/ngrids)
   end subroutine sml__print_summary
 
 
@@ -258,14 +320,10 @@ contains
 
     do j = 1 , height
       do i = 1 , width
-        call random_number(random)
-          sml%f( i, j ) = random
-        end if
+        call random_number(random)  ! 0.0 to 1.0
+        sml%f( i, j ) = random
       end do
     end do
-
-    sml%width  = width
-    sml%height = height
 
     call boundary_condition( sml )
   end subroutine sml__set_by_program
@@ -275,7 +333,7 @@ contains
     character(len=*), intent(in) :: filename
 
     type(pgm_t) :: pgm
-    integer(SI) :: gray
+    integer(SI) :: i, j, f_int
 
     call pgm__read( pgm, filename )
 
@@ -288,9 +346,11 @@ contains
 
     do j = 1 , sml%height
       do i = 1 , sml%width
-        gray = pgm%graylevel(i,j)
-        call assert( gray >= 0 .and. gray <= pgm%max,  &
-        sml%f(i,j) = real(gray, DR) / pgm%max
+        f_int = pgm%max - pgm%whitelevel(i,j)
+        ! convert white <--> black
+        call assert( f_int >= 0 .and. f_int <= pgm%max,  &
+                    "<sml__set_by_image> img%f(i,j) out of range." )
+        sml%f(i,j) = real(f_int, DR) / pgm%max
       end do
     end do
 
@@ -303,9 +363,10 @@ contains
     sml%f(:,:) = 0.0_DR
   end subroutine sml__reset
 
+
   subroutine sml__save
     type(pgm_t) :: pgm
-    integer(SI) :: widht, height
+    integer(SI) :: i, j, width, height
     integer(SI), parameter :: PGM_MAX = 255
 
     width  = sml%width
@@ -315,11 +376,11 @@ contains
     pgm%height = height
     pgm%max    = PGM_MAX
 
-    allocate( pgm%graylevel(width, height) )
+    allocate( pgm%whitelevel(width, height) )
 
     do j = 1, height
       do i = 1 , width
-        pgm%grayscale(i,j) = int(sml%f(i,j)*PGM_MAX)
+        pgm%whitelevel(i,j) = int(sml%f(i,j)*PGM_MAX)
       end do
     end do
 

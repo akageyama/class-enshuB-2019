@@ -33,7 +33,7 @@ OBJS = const.o \
 # 	./runme
 # 	convert -delay 5 ../data/*.pbm movie.gif
 
-movie.gif: runme kobe_gray.pgm
+movie.gif: runme sample_face.pgm
 	./runme
 	convert -delay 5 ../data/*.pgm movie.gif
 

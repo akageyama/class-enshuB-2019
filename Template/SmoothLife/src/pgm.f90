@@ -14,10 +14,10 @@ module pgm_m
             pgm__save
 
   type, public :: pgm_t
-    character(len=2) :: header ! must be 'P1'
+    character(len=2) :: header ! must be 'P2'
     integer(SI) :: width, height
     integer(SI) :: max
-    integer(SI), allocatable :: graylevel(:,:) ! 1 or 0
+    integer(SI), allocatable :: whitelevel(:,:) ! [0...max]
   end type pgm_t
 
   integer(SI), parameter :: FILE_NUM = 10
@@ -41,7 +41,7 @@ contains
 !  public
 
 
-  subroutine pgm__read(image, filename)
+  subroutine pgm__read( image, filename )
     type(pgm_t), intent(out) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j
@@ -56,20 +56,21 @@ contains
                    '<pgm__read> width/height must be positive.' )
       call assert( image%max > 0, &
                    '<pgm__read> max must be positive.' )
-      call assert( .not. allocated(image%graylevel), &
-                   '<pgm__read> graylevel already allocated.')
-      allocate( image%graylevel(image%width,image%height) )
+      if ( allocated( image%whitelevel ) ) then
+        deallocate( image%whitelevel )
+      end if
+      allocate( image%whitelevel( image%width, image%height ) )
       do j = 1 , image%height
-        read(FILE_NUM,*) ( image%graylevel(i,j), i=1, image%width )
+        read(FILE_NUM,*) ( image%whitelevel(i,j), i=1, image%width )
       end do
     close(FILE_NUM)
 
-    print *,' reading file:',  filename
+    print *,' reading a pgm file:',  filename
     print *,' header=',  image%header
     print *,' width=',  image%width, ' height=',image%height
     print *,'    max=',  image%max
     ! do j = 1 , image%height
-    !   write(*, '(i1,1x)') ( image%graylevel(i,j), i=1, image%width )
+    !   write(*, '(i1,1x)') ( image%whitelevel(i,j), i=1, image%width )
     ! end do
   end subroutine pgm__read
 
@@ -80,7 +81,7 @@ contains
     integer(SI) :: i, j
     do j = 1 , image%height
       do i = 1 , image%width
-        image%graylevel(i,j) = image%max - image%graylevel(i,j)
+        image%whitelevel(i,j) = image%max - image%whitelevel(i,j)
       end do
     end do
   end subroutine pgm__revert
@@ -96,7 +97,7 @@ contains
       write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
       write(FILE_NUM,'(i3)')       image%max
       do j = 1 , image%height
-        write(FILE_NUM,'(i1,1x)') ( image%graylevel(i,j), i=1, image%width )
+        write(FILE_NUM,'(i1,1x)') ( image%whitelevel(i,j), i=1, image%width )
       end do
     close(FILE_NUM)
   end subroutine pgm__save
