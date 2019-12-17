@@ -23,6 +23,8 @@ program main
   call sml__print_summary
   call sml__save
 
+  stop
+
   do n = 1 , 200
     call sml__advance
     call sml__print_summary

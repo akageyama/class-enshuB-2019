@@ -56,14 +56,15 @@ contains
 
     ! Let n = number of boundary overlap
     ! and w = pgm%width
-    !           1     2     3     4   ..  n-1    n    n+1   n+2
-    !           o-----o-----o-----o-- .. --o-----o-----o-----o--...
-    !           |     |     |     |        |     |
-    !           |   To implement the periodic boundary condition,
-    !           |   we assume that n grids are overlapped.
-    !           |     |     |     |        |     |
-    !...--o-----o-----o-----o-----o-- .. --o-----o
-    !    w-n  w-n+1 w-n+2 w-n+3 w-n+4     w-1    w
+    !
+    ! When n=3 
+    !           1       2       3       4
+    !           o-------o-------o-------o--...
+    !           |       |       |
+    !           |       |       |
+    !           |       |       |
+    !...-o------o-------o-------o-------o-------o-------o
+    !   w-6    w-5     w-4     w-3     w-2     w-1      w
     integer(SI) :: i, width, height
     integer(SI) :: nbo ! number of grid points for the bounary overlap
 
@@ -75,10 +76,10 @@ contains
                 "<sml/boundary_condition> nbo is too large" )
 
     do i = 1 , nbo
-      sml%f(i,           :) = sml%f(width-nbo+i, :)
-      sml%f(width-nbo+i, :) = sml%f(          i, :)
-      sml%f(:,           i) = sml%f(:,height-nbo+i)
-      sml%f(:,height-nbo+i) = sml%f(:,           i)
+      sml%f(i,           :) = sml%f(width-2*nbo+i, :)
+      sml%f(width-nbo+i, :) = sml%f(            i, :)
+      sml%f(:,           i) = sml%f(:,height-2*nbo+i)
+      sml%f(:,height-nbo+i) = sml%f(:,             i)
     end do
   end subroutine boundary_condition
 
@@ -117,7 +118,7 @@ contains
     integer(SI), intent(in) :: i, j, irad
     real(DR) :: integrate_circle
 
-    integer(SI) :: ii, jj, delta
+    integer(SI) :: ii, jj
     real(DR) :: papers_variable_ell, darea
     real(DR) :: sum_area, sum_f
     real(DR) :: rad_plus_b_half, rad_minus_b_half
@@ -131,17 +132,17 @@ contains
     !      |     |     |     |     |     |
     !      |     |     |  *  |     |     |
     !      o-----o-----o-----o-----o-----o
-    !      |     |     |     |*    |     |
+    !      |     |     |     | *   |     |
     !      |     |     |     |     |     |
     !      o-----o-----o-----o-----o-----o
-    !      |     |     |     |    *|     |
+    !      |     |     |     |     *     |
     !      |     |     |     |     |     |
     !      o-----o-----o-----o-----o-----o
-    !      |     |     |     |     | *   |
+    !      |     |     |     |     |  *  |
     !      |     |     |     |     |     |
-    !      X-----o-----o-----o-----o--*--o
+    !      X-----o-----o-----o-----o-----*
     !       \                             \
-    !        grid:(i,j)                   grid:(i+delta,j)
+    !        grid=(i,j)                   grid=(i+irad,j)
     !                     b/2     b/2
     !                    __|__   __|__
     !                   /     \ /     \
@@ -178,8 +179,8 @@ contains
           darea = 0.0_DR
         end if
 
-        sum_f = sum_f + sml%f_copy(i,j)*darea
-        sum_area      = sum_area   + darea
+        sum_f = sum_f + sml%f_copy(ii,jj) * darea
+        sum_area      = sum_area          + darea
       end do
     end do
 
@@ -372,6 +373,7 @@ contains
     width  = sml%width
     height = sml%height
 
+    pgm%header = 'P2'
     pgm%width  = width
     pgm%height = height
     pgm%max    = PGM_MAX

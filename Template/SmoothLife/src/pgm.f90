@@ -97,7 +97,7 @@ contains
       write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
       write(FILE_NUM,'(i3)')       image%max
       do j = 1 , image%height
-        write(FILE_NUM,'(i1,1x)') ( image%whitelevel(i,j), i=1, image%width )
+        write(FILE_NUM,'(i3,1x)') ( image%whitelevel(i,j), i=1, image%width )
       end do
     close(FILE_NUM)
   end subroutine pgm__save
