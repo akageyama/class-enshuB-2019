@@ -180,14 +180,19 @@ contains
         end if
 
         sum_f = sum_f + sml%f_copy(ii,jj) * darea
-        sum_area      = sum_area          + darea
+        sum_area = sum_area               + darea
       end do
     end do
 
     call assert( sum_area > 0.0_DR, &
-                "<sml/calc_papers_variable_m> sum_surfae <= 0?!" )
+                "<sml/integrate_circle> sum_surfae <= 0?!" )
 
     integrate_circle = sum_f / sum_area
+
+    call assert( integrate_circle <= 1.0_DR, &
+                "<sml/integrate_circle> integrate_circle > 1?!" )
+    call assert( integrate_circle >= 0.0_DR, &
+                "<sml/integrate_circle> integrate_circle < 0?!" )
 
   end function integrate_circle
 
