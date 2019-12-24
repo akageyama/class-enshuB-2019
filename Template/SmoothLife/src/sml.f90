@@ -57,7 +57,7 @@ contains
     ! Let n = number of boundary overlap
     ! and w = pgm%width
     !
-    ! When n=3 
+    ! When n=3
     !           1       2       3       4
     !           o-------o-------o-------o--...
     !           |       |       |
@@ -72,10 +72,10 @@ contains
     width  = sml%width
     height = sml%height
 
-    call assert( nbo <= width .and. nbo <= height, &
+    call assert( width-2*nbo > 0 .and. height-2*nbo > 0,  &
                 "<sml/boundary_condition> nbo is too large" )
 
-    do i = 1 , nbo
+    do i = 1, nbo
       sml%f(i,           :) = sml%f(width-2*nbo+i, :)
       sml%f(width-nbo+i, :) = sml%f(        nbo+i, :)
       sml%f(:,           i) = sml%f(:,height-2*nbo+i)
@@ -101,7 +101,7 @@ contains
   end function int_to_str6
 
 
-  function distance(i1, j1, i2, j2)
+  function distance( i1, j1, i2, j2 )
     integer(SI), intent(in) :: i1, j1, i2, j2
     real(DR) :: distance
 
@@ -153,8 +153,8 @@ contains
     !      |                           |
     !      +---------------------------*
 
-    call assert( irad >= 1,  &
-                 "<sml/integrate_circle> irad = 0 or negative?!" )
+    call assert( irad > 0,  &
+                 "<sml/integrate_circle> irad <= 0 ?!" )
     call assert( irad <= PAPERS_PARAM_RA_INT,  &
                  "<sml/integrate_circle> irad too large." )
 
