@@ -14,7 +14,7 @@ program main
 
   call const__print
 
-  call sml__set_by_image('sample_face.pgm')
+  call sml__set_by_image('kobe.pgm')
   ! call gol__set_by_image('kobe_bitmap.pbm')
   ! call gol__set_by_image('pentomino_bitmap.pbm')
   ! call gol__set_by_image('start.pbm')
@@ -23,7 +23,6 @@ program main
   call sml__print_summary
   call sml__save
 
-  stop
 
   do n = 1 , 200
     call sml__advance

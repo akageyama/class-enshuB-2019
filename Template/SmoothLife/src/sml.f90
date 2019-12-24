@@ -77,9 +77,9 @@ contains
 
     do i = 1 , nbo
       sml%f(i,           :) = sml%f(width-2*nbo+i, :)
-      sml%f(width-nbo+i, :) = sml%f(            i, :)
+      sml%f(width-nbo+i, :) = sml%f(        nbo+i, :)
       sml%f(:,           i) = sml%f(:,height-2*nbo+i)
-      sml%f(:,height-nbo+i) = sml%f(:,             i)
+      sml%f(:,height-nbo+i) = sml%f(:,         nbo+i)
     end do
   end subroutine boundary_condition
 
@@ -192,27 +192,25 @@ contains
   end function integrate_circle
 
 
-  function papers_function_sigma1( x, a )
-    real(DR), intent(in) :: x, a
+  function papers_function_sigma1( x, a, alpha )
+    real(DR), intent(in) :: x, a, alpha
     real(DR) :: papers_function_sigma1
 
-    real(DR), parameter :: PAPERS_PARAM_ALPHA = 0.147_DR
-    real(DR), parameter :: FOUR_OVER_ALPHA = 4.0_DR / PAPERS_PARAM_ALPHA
     real(DR) :: denominator
 
-    denominator = 1.0_DR + exp( -(x-a)*FOUR_OVER_ALPHA )
+    denominator = 1.0_DR + exp( -4*(x-a)/alpha )
     papers_function_sigma1 = 1.0_DR / denominator
   end function papers_function_sigma1
 
 
-  function papers_function_sigma2( x, a, b )
-    real(DR), intent(in) :: x, a, b
+  function papers_function_sigma2( x, a, b, alpha )
+    real(DR), intent(in) :: x, a, b, alpha
     real(DR) :: papers_function_sigma2
 
     real(DR) :: sigma1a, sigma1b
 
-    sigma1a = papers_function_sigma1( x, a )
-    sigma1b = papers_function_sigma1( x, b )
+    sigma1a = papers_function_sigma1( x, a, alpha )
+    sigma1b = papers_function_sigma1( x, b, alpha )
 
     papers_function_sigma2 = sigma1a * ( 1.0_DR - sigma1b )
   end function papers_function_sigma2
@@ -223,8 +221,10 @@ contains
     real(DR) :: papers_function_sigma_m
 
     real(DR) :: sigma1
+    real(DR), parameter :: PAPERS_PARAM_ALPHA_M = 0.147_DR
 
-    sigma1 = papers_function_sigma1( m, 0.5_DR )
+    sigma1 = papers_function_sigma1( m, 0.5_DR, &
+                                     PAPERS_PARAM_ALPHA_M )
 
     papers_function_sigma_m = x * ( 1 - sigma1 ) + y * sigma1
   end function papers_function_sigma_m
@@ -238,6 +238,7 @@ contains
     real(DR), parameter :: PAPERS_PARAM_B2 = 0.365_DR
     real(DR), parameter :: PAPERS_PARAM_D1 = 0.267_DR
     real(DR), parameter :: PAPERS_PARAM_D2 = 0.445_DR
+    real(DR), parameter :: PAPERS_PARAM_ALPHA_N = 0.028_DR
     real(DR) :: sigma_m_1, sigma_m_2
 
     sigma_m_1 = papers_function_sigma_m( PAPERS_PARAM_B1,  &
@@ -246,9 +247,11 @@ contains
     sigma_m_2 = papers_function_sigma_m( PAPERS_PARAM_B2,  &
                                          PAPERS_PARAM_D2,  &
                                          m )
-    papers_function_s = papers_function_sigma2( n,  &
-                                                sigma_m_1,  &
-                                                sigma_m_2  )
+    papers_function_s =  &
+           papers_function_sigma2( n,  &
+                                   sigma_m_1,  &
+                                   sigma_m_2,  &
+                                   PAPERS_PARAM_ALPHA_N )
   end function papers_function_s
 
 
@@ -267,23 +270,25 @@ contains
 
     ! Let n = number of boundary overlap
     ! and w = pgm%width
-    !           1     2     3     4   ..  n-1    n    n+1   n+2
-    !           o-----o-----o-----o-- .. --o-----o-----o-----o--...
-    !           |     |     |     |        |     |
-    !           |   To implement the periodic boundary condition,
-    !           |   we assume that n grids are overlapped.
-    !           |     |     |     |        |     |
-    !...--o-----o-----o-----o-----o-- .. --o-----o
-    !    w-n  w-n+1 w-n+2 w-n+3 w-n+4     w-1    w
+    !
+    ! When n=3 
+    !           1       2       3       4
+    !           o-------o-------o-------o--...
+    !           |       |       |
+    !           |       |       |
+    !           |       |       |
+    !...-o------o-------o-------o-------o-------o-------o
+    !   w-6    w-5     w-4     w-3     w-2     w-1      w
 
     nbo = PAPERS_PARAM_RA_INT
-    do j = nbo+1, sml%height-nbo
-      do i = nbo+1, sml%width-nbo
+    do j = nbo+1, sml%height-2*nbo
+      do i = nbo+1, sml%width-2*nbo
         papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI_INT )
         papers_variable_n = integrate_circle( i, j, PAPERS_PARAM_RA_INT )  &
                           - papers_variable_m
         sml%f(i,j) = papers_function_s( papers_variable_n,  &
                                         papers_variable_m )
+print *, 'm,n,f=',papers_variable_m,papers_variable_n,sml%f(i,j)
       end do
     end do
 
@@ -382,7 +387,7 @@ contains
 
     do j = 1, height
       do i = 1 , width
-        pgm%whitelevel(i,j) = int(sml%f(i,j)*PGM_MAX)
+        pgm%whitelevel(i,j) = int( sml%f(i,j)*PGM_MAX )
       end do
     end do
 
