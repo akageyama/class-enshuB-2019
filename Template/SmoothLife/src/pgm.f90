@@ -87,7 +87,7 @@ contains
   end subroutine pgm__revert
 
 
-  subroutine pgm__save(image, filename)
+  subroutine pgm__save( image, filename )
     type(pgm_t), intent(in) :: image
     character(len=*), intent(in) :: filename
     integer(SI) :: i, j

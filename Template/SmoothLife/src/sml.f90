@@ -67,6 +67,7 @@ contains
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
     integer(SI) :: i, width, height
     integer(SI) :: nbo ! number of grid points for the bounary overlap
+    integer(SI) :: j
 
     nbo = PAPERS_PARAM_RA_INT
     width  = sml%width
@@ -80,6 +81,12 @@ contains
       sml%f(width-nbo+i, :) = sml%f(        nbo+i, :)
       sml%f(:,           i) = sml%f(:,height-2*nbo+i)
       sml%f(:,height-nbo+i) = sml%f(:,         nbo+i)
+    end do
+
+    do j = int(2.0_DR*height/5), int(3.0_DR*height/5)
+      do i = int(2.0_DR*width/5), int(3.0_DR*width/5)
+        sml%f(i,j) = 0.0_DR
+      end do
     end do
   end subroutine boundary_condition
 
@@ -276,7 +283,7 @@ contains
     ! Let n = number of boundary overlap
     ! and w = pgm%width
     !
-    ! When n=3 
+    ! When n=3
     !           1       2       3       4
     !           o-------o-------o-------o--...
     !           |       |       |
@@ -286,14 +293,13 @@ contains
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
 
     nbo = PAPERS_PARAM_RA_INT
-    do j = nbo+1, sml%height-2*nbo
-      do i = nbo+1, sml%width-2*nbo
+    do j = nbo+1, sml%height-nbo
+      do i = nbo+1, sml%width-nbo
         papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI_INT )
         papers_variable_n = integrate_circle( i, j, PAPERS_PARAM_RA_INT )  &
                           - papers_variable_m
         sml%f(i,j) = papers_function_s( papers_variable_n,  &
                                         papers_variable_m )
-print *, 'm,n,f=',papers_variable_m,papers_variable_n,sml%f(i,j)
       end do
     end do
 
@@ -314,8 +320,8 @@ print *, 'm,n,f=',papers_variable_m,papers_variable_n,sml%f(i,j)
 
 
   subroutine sml__set_by_program
-    integer(SI) :: width  = 101
-    integer(SI) :: height = 71
+    integer(SI) :: width  = 200
+    integer(SI) :: height = 200
 
     integer(SI) :: i, j, i2, j2
     integer(SI) :: some_non_negative_int
@@ -378,7 +384,7 @@ print *, 'm,n,f=',papers_variable_m,papers_variable_n,sml%f(i,j)
   subroutine sml__save
     type(pgm_t) :: pgm
     integer(SI) :: i, j, width, height
-    integer(SI), parameter :: PGM_MAX = 255
+    integer(SI), parameter :: PGM_MAX = 3
 
     width  = sml%width
     height = sml%height

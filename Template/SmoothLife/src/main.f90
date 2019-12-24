@@ -14,7 +14,8 @@ program main
 
   call const__print
 
-  call sml__set_by_image('kobe.pgm')
+  ! call sml__set_by_image('kobe.pgm')
+  call sml__set_by_program
   ! call gol__set_by_image('kobe_bitmap.pbm')
   ! call gol__set_by_image('pentomino_bitmap.pbm')
   ! call gol__set_by_image('start.pbm')
