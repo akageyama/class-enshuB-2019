@@ -83,11 +83,11 @@ contains
       sml%f(:,height-nbo+i) = sml%f(:,         nbo+i)
     end do
 
-    do j = int(2.0_DR*height/5), int(3.0_DR*height/5)
-      do i = int(2.0_DR*width/5), int(3.0_DR*width/5)
-        sml%f(i,j) = 0.0_DR
-      end do
-    end do
+    !> do j = int(2.0_DR*height/5), int(3.0_DR*height/5)
+    !>   do i = int(2.0_DR*width/5), int(3.0_DR*width/5)
+    !>     sml%f(i,j) = 0.0_DR
+    !>   end do
+    !> end do
   end subroutine boundary_condition
 
 
@@ -204,6 +204,79 @@ contains
   end function integrate_circle
 
 
+  function integral( i, j, irad )
+    integer(SI), intent(in) :: i, j, irad
+    real(DR) :: integral
+
+    integer(SI) :: ii, jj
+    real(DR) :: papers_variable_ell, darea
+    real(DR) :: sum_f
+    real(DR) :: rad_plus_b_half, rad_minus_b_half
+
+    sum_f    = 0.0_DR ! reset
+
+    !      *     |     |     |     |     |
+    !      |     *     |     |     |     |
+    !      o-----o---*-o-----o-----o-----o
+    !      |     |     |     |     |     |
+    !      |     |     |  *  |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     | *   |     |
+    !      |     |     |     |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     |     *     |
+    !      |     |     |     |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     |     |  *  |
+    !      |     |     |     |     |     |
+    !      X-----o-----o-----o-----o-----*
+    !       \                             \
+    !        grid=(i,j)                   grid=(i+irad,j)
+    !                     b/2     b/2
+    !                    __|__   __|__
+    !                   /     \ /     \
+    !      +-----------x-------O-------x
+    !      |                   |       |
+    !      |<----------------->|       |
+    !      |       irad                |
+    !      |                           |
+    !      +---------------------------*
+
+    call assert( irad > 0,  &
+                 "<sml/integral> irad <= 0 ?!" )
+    call assert( irad <= PAPERS_PARAM_RA_INT,  &
+                 "<sml/integral> irad too large." )
+
+    call assert ( i-irad >= 1,          "i-irad out of range" )
+    call assert ( i+irad <= sml%width,  "i+irad out of range" )
+    call assert ( j-irad >= 1,          "j-irad out of range" )
+    call assert ( j+irad <= sml%height, "j+irad out of range" )
+
+    rad_plus_b_half  = real(irad,DR) + PAPERS_PARAM_B / 2
+    rad_minus_b_half = real(irad,DR) - PAPERS_PARAM_B / 2
+
+    do jj = j-irad, j+irad
+      do ii = i-irad, i+irad
+        papers_variable_ell = distance(i, j, ii, jj)
+        if ( papers_variable_ell <= rad_minus_b_half ) then
+          darea = 1.0_DR
+        else if ( rad_minus_b_half < papers_variable_ell .and. &
+                  rad_plus_b_half >= papers_variable_ell ) then
+          darea = (  rad_plus_b_half  &
+                   - papers_variable_ell ) / PAPERS_PARAM_B
+        else
+          darea = 0.0_DR
+        end if
+
+        sum_f = sum_f + sml%f_copy(ii,jj) * darea
+      end do
+    end do
+
+    integral = sum_f
+
+  end function integral
+
+
   function papers_function_sigma1( x, a, alpha )
     real(DR), intent(in) :: x, a, alpha
     real(DR) :: papers_function_sigma1
@@ -276,6 +349,8 @@ contains
   subroutine sml__advance
     integer(SI) :: i, j, nbo
 
+    real(DR) :: ra_sq, ri_sq, factor_n, factor_m
+    real(DR) :: s, integral_ri, integral_ra
     real(DR) :: papers_variable_m, papers_variable_n
 
     sml%f_copy(:,:) = sml%f(:,:)
@@ -292,14 +367,24 @@ contains
     !...-o------o-------o-------o-------o-------o-------o
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
 
+    ri_sq = real(PAPERS_PARAM_RI_INT, DR)**2
+    ra_sq = real(PAPERS_PARAM_RA_INT, DR)**2
+
+    factor_m = 1.0_DR / ( PI*ri_sq )
+    factor_n = 1.0_DR / ( PI*(ra_sq-ri_sq) )
+
     nbo = PAPERS_PARAM_RA_INT
     do j = nbo+1, sml%height-nbo
       do i = nbo+1, sml%width-nbo
-        papers_variable_m = integrate_circle( i, j, PAPERS_PARAM_RI_INT )
-        papers_variable_n = integrate_circle( i, j, PAPERS_PARAM_RA_INT )  &
-                          - papers_variable_m
-        sml%f(i,j) = papers_function_s( papers_variable_n,  &
-                                        papers_variable_m )
+        integral_ri = integral( i, j, PAPERS_PARAM_RI_INT )
+        integral_ra = integral( i, j, PAPERS_PARAM_RA_INT )
+        papers_variable_m = integral_ri * factor_m
+        papers_variable_n = ( integral_ra - integral_ri ) * factor_n
+        s = papers_function_s( papers_variable_n,  &
+                               papers_variable_m )
+        sml%f(i,j) = s
+        call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
+                     "<sml__advance> s out of range.")
       end do
     end do
 
@@ -320,10 +405,10 @@ contains
 
 
   subroutine sml__set_by_program
-    integer(SI) :: width  = 200
-    integer(SI) :: height = 200
+    integer(SI) :: width  = 400
+    integer(SI) :: height = 400
 
-    integer(SI) :: i, j, i2, j2
+    integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
     real(DR) :: random
 
@@ -335,10 +420,15 @@ contains
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    do j = 1 , height
-      do i = 1 , width
+    skip = PAPERS_PARAM_RA_INT*0.8
+    do j = 1 , height, skip
+      do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
-        sml%f( i, j ) = random
+        do j2 = 0 , skip-1
+          do i2 = 0 , skip-1
+            sml%f( i+i2, j+j2 ) = random
+          end do
+        end do
       end do
     end do
 
