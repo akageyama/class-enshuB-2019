@@ -311,7 +311,6 @@ contains
     if ( first_time ) then
       call make_sheet( PAPERS_RI, sheet_ri )
       call make_sheet( PAPERS_RA, sheet_ra )
-!     allocate ( sml_copy%f( sml%width, sml%height ) )
       first_time = .false.
     end if
 
@@ -368,8 +367,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 800
-    integer(SI) :: height = 800
+    integer(SI) :: width  = 500
+    integer(SI) :: height = 500
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -382,13 +381,16 @@ contains
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    skip = PAPERS_RA/2
+    skip = PAPERS_RA
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
         do j2 = 0 , skip-1
           do i2 = 0 , skip-1
-            sml%f( i+i2, j+j2 ) = random
+            if ( i+i2 <= sml%width .and. &
+                 j+j2 <= sml%height ) then
+              sml%f( i+i2, j+j2 ) = random
+            end if
           end do
         end do
       end do
