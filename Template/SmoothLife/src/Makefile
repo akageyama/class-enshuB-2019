@@ -12,7 +12,7 @@
 FC = g95 -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
-FFLAGS =
+FFLAGS = -O3
 
 
 .f90.o:

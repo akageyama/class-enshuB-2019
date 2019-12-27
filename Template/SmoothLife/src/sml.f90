@@ -33,10 +33,8 @@ module sml_m
 
   integer(SI), parameter :: FILE_NUM = 10
 
-  integer(SI), parameter :: PAPERS_PARAM_RA_INT = 21
-  integer(SI), parameter :: PAPERS_PARAM_RI_INT = 7
-
-  real(DR), parameter :: PAPERS_PARAM_B = 1.0_DR
+  integer(SI), parameter :: PAPERS_RA = 21
+  integer(SI), parameter :: PAPERS_RI = 7
 
 contains
 
@@ -69,7 +67,7 @@ contains
     integer(SI) :: nbo ! number of grid points for the bounary overlap
     integer(SI) :: j
 
-    nbo = PAPERS_PARAM_RA_INT
+    nbo = PAPERS_RA
     width  = sml%width
     height = sml%height
 
@@ -82,12 +80,6 @@ contains
       sml%f(:,           i) = sml%f(:,height-2*nbo+i)
       sml%f(:,height-nbo+i) = sml%f(:,         nbo+i)
     end do
-
-    !> do j = int(2.0_DR*height/5), int(3.0_DR*height/5)
-    !>   do i = int(2.0_DR*width/5), int(3.0_DR*width/5)
-    !>     sml%f(i,j) = 0.0_DR
-    !>   end do
-    !> end do
   end subroutine boundary_condition
 
 
@@ -108,110 +100,13 @@ contains
   end function int_to_str6
 
 
-  function distance( i1, j1, i2, j2 )
-    integer(SI), intent(in) :: i1, j1, i2, j2
-    real(DR) :: distance
-
-    real(DR) :: dx, dy
-
-    dx = real(i1-i2, DR)
-    dy = real(j1-j2, DR)
-
-    distance = sqrt( dx*dx + dy*dy )
-  end function distance
-
-
-  function integrate_circle( i, j, irad )
+  function integral( i, j, irad, sheet )
     integer(SI), intent(in) :: i, j, irad
-    real(DR) :: integrate_circle
-
-    integer(SI) :: ii, jj
-    real(DR) :: papers_variable_ell, darea
-    real(DR) :: sum_area, sum_f
-    real(DR) :: rad_plus_b_half, rad_minus_b_half
-
-    sum_area = 0.0_DR    ! reset
-    sum_f    = 0.0_DR
-
-    !      *     |     |     |     |     |
-    !      |     *     |     |     |     |
-    !      o-----o---*-o-----o-----o-----o
-    !      |     |     |     |     |     |
-    !      |     |     |  *  |     |     |
-    !      o-----o-----o-----o-----o-----o
-    !      |     |     |     | *   |     |
-    !      |     |     |     |     |     |
-    !      o-----o-----o-----o-----o-----o
-    !      |     |     |     |     *     |
-    !      |     |     |     |     |     |
-    !      o-----o-----o-----o-----o-----o
-    !      |     |     |     |     |  *  |
-    !      |     |     |     |     |     |
-    !      X-----o-----o-----o-----o-----*
-    !       \                             \
-    !        grid=(i,j)                   grid=(i+irad,j)
-    !                     b/2     b/2
-    !                    __|__   __|__
-    !                   /     \ /     \
-    !      +-----------x-------O-------x
-    !      |                   |       |
-    !      |<----------------->|       |
-    !      |       irad                |
-    !      |                           |
-    !      +---------------------------*
-
-    call assert( irad > 0,  &
-                 "<sml/integrate_circle> irad <= 0 ?!" )
-    call assert( irad <= PAPERS_PARAM_RA_INT,  &
-                 "<sml/integrate_circle> irad too large." )
-
-    call assert ( i-irad >= 1,          "i-irad out of range" )
-    call assert ( i+irad <= sml%width,  "i+irad out of range" )
-    call assert ( j-irad >= 1,          "j-irad out of range" )
-    call assert ( j+irad <= sml%height, "j+irad out of range" )
-
-    rad_plus_b_half  = real(irad,DR) + PAPERS_PARAM_B / 2
-    rad_minus_b_half = real(irad,DR) - PAPERS_PARAM_B / 2
-
-    do jj = j-irad, j+irad
-      do ii = i-irad, i+irad
-        papers_variable_ell = distance(i, j, ii, jj)
-        if ( papers_variable_ell <= rad_minus_b_half ) then
-          darea = 1.0_DR
-        else if ( rad_minus_b_half < papers_variable_ell .and. &
-                  rad_plus_b_half >= papers_variable_ell ) then
-          darea = (  rad_plus_b_half  &
-                   - papers_variable_ell ) / PAPERS_PARAM_B
-        else
-          darea = 0.0_DR
-        end if
-
-        sum_f = sum_f + sml%f_copy(ii,jj) * darea
-        sum_area = sum_area               + darea
-      end do
-    end do
-
-    call assert( sum_area > 0.0_DR, &
-                "<sml/integrate_circle> sum_surfae <= 0?!" )
-
-    integrate_circle = sum_f / sum_area
-
-    call assert( integrate_circle <= 1.0_DR, &
-                "<sml/integrate_circle> integrate_circle > 1?!" )
-    call assert( integrate_circle >= 0.0_DR, &
-                "<sml/integrate_circle> integrate_circle < 0?!" )
-
-  end function integrate_circle
-
-
-  function integral( i, j, irad )
-    integer(SI), intent(in) :: i, j, irad
+    real(DR), dimension(-irad:irad,-irad:irad), intent(in) :: sheet
     real(DR) :: integral
 
     integer(SI) :: ii, jj
-    real(DR) :: papers_variable_ell, darea
     real(DR) :: sum_f
-    real(DR) :: rad_plus_b_half, rad_minus_b_half
 
     sum_f    = 0.0_DR ! reset
 
@@ -244,7 +139,7 @@ contains
 
     call assert( irad > 0,  &
                  "<sml/integral> irad <= 0 ?!" )
-    call assert( irad <= PAPERS_PARAM_RA_INT,  &
+    call assert( irad <= PAPERS_RA,  &
                  "<sml/integral> irad too large." )
 
     call assert ( i-irad >= 1,          "i-irad out of range" )
@@ -252,29 +147,86 @@ contains
     call assert ( j-irad >= 1,          "j-irad out of range" )
     call assert ( j+irad <= sml%height, "j+irad out of range" )
 
-    rad_plus_b_half  = real(irad,DR) + PAPERS_PARAM_B / 2
-    rad_minus_b_half = real(irad,DR) - PAPERS_PARAM_B / 2
-
-    do jj = j-irad, j+irad
-      do ii = i-irad, i+irad
-        papers_variable_ell = distance(i, j, ii, jj)
-        if ( papers_variable_ell <= rad_minus_b_half ) then
-          darea = 1.0_DR
-        else if ( rad_minus_b_half < papers_variable_ell .and. &
-                  rad_plus_b_half >= papers_variable_ell ) then
-          darea = (  rad_plus_b_half  &
-                   - papers_variable_ell ) / PAPERS_PARAM_B
-        else
-          darea = 0.0_DR
-        end if
-
-        sum_f = sum_f + sml%f_copy(ii,jj) * darea
+    do jj = -irad, +irad
+      do ii = -irad, +irad
+        sum_f = sum_f + sml%f_copy(i+ii,j+jj) * sheet(ii,jj)
       end do
     end do
 
     integral = sum_f
-
   end function integral
+
+
+  subroutine make_sheet( irad, sheet )
+    integer(SI), intent(in) :: irad
+    real(DR), dimension(-irad:irad,-irad:irad), intent(out) :: sheet
+    
+    real(DR), parameter :: PAPERS_B = 1.0_DR
+    real(DR) :: papers_ell, rad_plus_b_half, rad_minus_b_half
+    integer(SI) :: i, j
+
+    !      *-----o-----o-----o-----o-----o
+    !      |   * |     |     |     |     |
+    !      |     |     |     |     |     |
+    !      o-----o---*-o-----o-----o-----o
+    !      |     |     |     |     |     |
+    !      |     |     |  *  |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     | *   |     |
+    !      |     |     |     |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     |     |*    |
+    !      |     |     |     |     |     |
+    !      o-----o-----o-----o-----o-----o
+    !      |     |     |     |     |   * |
+    !      |     |     |     |     |     |
+    !      X-----o-----o-----o-----o-----*
+    !       \                             \
+    !        center of interest           radius 
+    !                     b/2     b/2
+    !                    __|__   __|__
+    !                   /     \ /     \
+    !      +-----------x-------O-------x
+    !      |                   |       |
+    !      |<----------------->|       |
+    !      |       irad                |
+    !      |                           |
+    !      +---------------------------*
+
+
+    rad_plus_b_half  = real(irad,DR) + PAPERS_B / 2.0_DR
+    rad_minus_b_half = real(irad,DR) - PAPERS_B / 2.0_DR
+
+    do j = -irad, irad
+      do i = -irad, irad
+        papers_ell = iDistance( i, j )
+        if ( papers_ell <= rad_minus_b_half ) then
+          sheet(i,j) = 1.0_DR
+        else if ( rad_minus_b_half < papers_ell .and. &
+                  rad_plus_b_half >= papers_ell ) then
+          sheet(i,j) = (  rad_plus_b_half  &
+                        - papers_ell ) / PAPERS_B
+        else
+          sheet(i,j) = 0.0_DR
+        end if
+      end do
+    end do
+
+  contains
+
+    function iDistance( i, j )
+      integer(SI), intent(in) :: i, j
+      real(DR) :: iDistance
+
+      real(DR) :: x, y
+
+      x = real(i, DR)
+      y = real(j, DR)
+
+      iDistance = sqrt( x*x + y*y )
+    end function iDistance
+    
+  end subroutine make_sheet
 
 
   function papers_function_sigma1( x, a, alpha )
@@ -283,7 +235,7 @@ contains
 
     real(DR) :: denominator
 
-    denominator = 1.0_DR + exp( -4*(x-a)/alpha )
+    denominator = 1.0_DR + exp( -4.0_DR*(x-a)/alpha )
     papers_function_sigma1 = 1.0_DR / denominator
   end function papers_function_sigma1
 
@@ -306,10 +258,10 @@ contains
     real(DR) :: papers_function_sigma_m
 
     real(DR) :: sigma1
-    real(DR), parameter :: PAPERS_PARAM_ALPHA_M = 0.147_DR
+    real(DR), parameter :: PAPERS_ALPHA_M = 0.147_DR
 
     sigma1 = papers_function_sigma1( m, 0.5_DR, &
-                                     PAPERS_PARAM_ALPHA_M )
+                                     PAPERS_ALPHA_M )
 
     papers_function_sigma_m = x * ( 1 - sigma1 ) + y * sigma1
   end function papers_function_sigma_m
@@ -319,24 +271,23 @@ contains
     real(DR), intent(in) :: n, m
     real(DR) :: papers_function_s
 
-    real(DR), parameter :: PAPERS_PARAM_B1 = 0.278_DR
-    real(DR), parameter :: PAPERS_PARAM_B2 = 0.365_DR
-    real(DR), parameter :: PAPERS_PARAM_D1 = 0.267_DR
-    real(DR), parameter :: PAPERS_PARAM_D2 = 0.445_DR
-    real(DR), parameter :: PAPERS_PARAM_ALPHA_N = 0.028_DR
+    real(DR), parameter :: PAPERS_B1 = 0.278_DR
+    real(DR), parameter :: PAPERS_B2 = 0.365_DR
+    real(DR), parameter :: PAPERS_D1 = 0.267_DR
+    real(DR), parameter :: PAPERS_D2 = 0.445_DR
+    real(DR), parameter :: PAPERS_ALPHA_N = 0.028_DR
     real(DR) :: sigma_m_1, sigma_m_2
 
-    sigma_m_1 = papers_function_sigma_m( PAPERS_PARAM_B1,  &
-                                         PAPERS_PARAM_D1,  &
+    sigma_m_1 = papers_function_sigma_m( PAPERS_B1,  &
+                                         PAPERS_D1,  &
                                          m )
-    sigma_m_2 = papers_function_sigma_m( PAPERS_PARAM_B2,  &
-                                         PAPERS_PARAM_D2,  &
+    sigma_m_2 = papers_function_sigma_m( PAPERS_B2,  &
+                                         PAPERS_D2,  &
                                          m )
-    papers_function_s =  &
-           papers_function_sigma2( n,  &
-                                   sigma_m_1,  &
-                                   sigma_m_2,  &
-                                   PAPERS_PARAM_ALPHA_N )
+    papers_function_s = papers_function_sigma2( n,  &
+                                                sigma_m_1,  &
+                                                sigma_m_2,  &
+                                                PAPERS_ALPHA_N )
   end function papers_function_s
 
 
@@ -347,11 +298,21 @@ contains
 
 
   subroutine sml__advance
-    integer(SI) :: i, j, nbo
-
+    integer(SI) :: i, j
     real(DR) :: ra_sq, ri_sq, factor_n, factor_m
     real(DR) :: s, integral_ri, integral_ra
-    real(DR) :: papers_variable_m, papers_variable_n
+    real(DR) :: papers_m, papers_n
+    logical, save :: first_time = .true.
+    real(DR), dimension( -PAPERS_RA:PAPERS_RA,  &
+                         -PAPERS_RA:PAPERS_RA ), save :: sheet_ra
+    real(DR), dimension( -PAPERS_RI:PAPERS_RI,  &
+                         -PAPERS_RI:PAPERS_RI ), save :: sheet_ri
+
+    if ( first_time ) then
+      call make_sheet( PAPERS_RI, sheet_ri )
+      call make_sheet( PAPERS_RA, sheet_ra )
+      first_time = .false.
+    end if
 
     sml%f_copy(:,:) = sml%f(:,:)
 
@@ -367,21 +328,19 @@ contains
     !...-o------o-------o-------o-------o-------o-------o
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
 
-    ri_sq = real(PAPERS_PARAM_RI_INT, DR)**2
-    ra_sq = real(PAPERS_PARAM_RA_INT, DR)**2
+    ri_sq = real(PAPERS_RI, DR)**2
+    ra_sq = real(PAPERS_RA, DR)**2
 
     factor_m = 1.0_DR / ( PI*ri_sq )
     factor_n = 1.0_DR / ( PI*(ra_sq-ri_sq) )
 
-    nbo = PAPERS_PARAM_RA_INT
-    do j = nbo+1, sml%height-nbo
-      do i = nbo+1, sml%width-nbo
-        integral_ri = integral( i, j, PAPERS_PARAM_RI_INT )
-        integral_ra = integral( i, j, PAPERS_PARAM_RA_INT )
-        papers_variable_m = integral_ri * factor_m
-        papers_variable_n = ( integral_ra - integral_ri ) * factor_n
-        s = papers_function_s( papers_variable_n,  &
-                               papers_variable_m )
+    do j = PAPERS_RA+1, sml%height-PAPERS_RA
+      do i = PAPERS_RA+1, sml%width-PAPERS_RA
+        integral_ri = integral( i, j, PAPERS_RI, sheet_ri )
+        integral_ra = integral( i, j, PAPERS_RA, sheet_ra )
+        papers_m = integral_ri * factor_m
+        papers_n = ( integral_ra - integral_ri ) * factor_n
+        s = papers_function_s( papers_n, papers_m )
         sml%f(i,j) = s
         call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
                      "<sml__advance> s out of range.")
@@ -420,7 +379,7 @@ contains
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    skip = PAPERS_PARAM_RA_INT*0.8
+    skip = PAPERS_RA*0.8
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
