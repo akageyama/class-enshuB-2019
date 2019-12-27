@@ -417,8 +417,8 @@ contains
 
     do j = 1 , sml%height
       do i = 1 , sml%width
-        f_int = pgm%max - pgm%whitelevel(i,j)
-        ! convert white <--> black
+        ! f_int = pgm%max - pgm%whitelevel(i,j) ! conv white <-> black
+        f_int = pgm%whitelevel(i,j)
         call assert( f_int >= 0 .and. f_int <= pgm%max,  &
                     "<sml__set_by_image> img%f(i,j) out of range." )
         sml%f(i,j) = real(f_int, DR) / pgm%max
