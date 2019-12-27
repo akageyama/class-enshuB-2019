@@ -14,7 +14,6 @@ module sml_m
   use pgm_m
   implicit none
   private
-  public :: sml
   public :: sml__advance,  &
             sml__print_summary,  &
             sml__reset,  &
@@ -26,10 +25,7 @@ module sml_m
     integer(SI) :: nstep
     integer(SI) :: width, height
     real(DR), dimension(:,:), allocatable :: f
-    real(DR), dimension(:,:), allocatable :: f_copy
   end type sml_t
-
-  type(sml_t) :: sml
 
   integer(SI), parameter :: FILE_NUM = 10
 
@@ -100,7 +96,8 @@ contains
   end function int_to_str6
 
 
-  function integral( i, j, irad, sheet )
+  function integral( sml, i, j, irad, sheet )
+    type(sml_t), intent(in) :: sml
     integer(SI), intent(in) :: i, j, irad
     real(DR), dimension(-irad:irad,-irad:irad), intent(in) :: sheet
     real(DR) :: integral
@@ -149,7 +146,7 @@ contains
 
     do jj = -irad, +irad
       do ii = -irad, +irad
-        sum_f = sum_f + sml%f_copy(i+ii,j+jj) * sheet(ii,jj)
+        sum_f = sum_f + sml%f(i+ii,j+jj) * sheet(ii,jj)
       end do
     end do
 
@@ -297,7 +294,9 @@ contains
 !  public
 
 
-  subroutine sml__advance
+  subroutine sml__advance(sml)
+    type(sml_t), intent(inout) :: sml
+
     integer(SI) :: i, j
     real(DR) :: ra_sq, ri_sq, factor_n, factor_m
     real(DR) :: s, integral_ri, integral_ra
@@ -307,14 +306,16 @@ contains
                          -PAPERS_RA:PAPERS_RA ), save :: sheet_ra
     real(DR), dimension( -PAPERS_RI:PAPERS_RI,  &
                          -PAPERS_RI:PAPERS_RI ), save :: sheet_ri
+    type(sml_t), save :: sml_copy
 
     if ( first_time ) then
       call make_sheet( PAPERS_RI, sheet_ri )
       call make_sheet( PAPERS_RA, sheet_ra )
+!     allocate ( sml_copy%f( sml%width, sml%height ) )
       first_time = .false.
     end if
 
-    sml%f_copy(:,:) = sml%f(:,:)
+    sml_copy = sml
 
     ! Let n = number of boundary overlap
     ! and w = pgm%width
@@ -336,8 +337,8 @@ contains
 
     do j = PAPERS_RA+1, sml%height-PAPERS_RA
       do i = PAPERS_RA+1, sml%width-PAPERS_RA
-        integral_ri = integral( i, j, PAPERS_RI, sheet_ri )
-        integral_ra = integral( i, j, PAPERS_RA, sheet_ra )
+        integral_ri = integral( sml_copy, i, j, PAPERS_RI, sheet_ri )
+        integral_ra = integral( sml_copy, i, j, PAPERS_RA, sheet_ra )
         papers_m = integral_ri * factor_m
         papers_n = ( integral_ra - integral_ri ) * factor_n
         s = papers_function_s( papers_n, papers_m )
@@ -353,7 +354,9 @@ contains
   end subroutine sml__advance
 
 
-  subroutine sml__print_summary
+  subroutine sml__print_summary( sml )
+    type(sml_t), intent(in) :: sml
+
     integer(SI) :: width, height, ngrids
     width  = sml%width
     height = sml%height
@@ -363,9 +366,10 @@ contains
   end subroutine sml__print_summary
 
 
-  subroutine sml__set_by_program
-    integer(SI) :: width  = 400
-    integer(SI) :: height = 400
+  subroutine sml__set_by_program( sml )
+    type(sml_t), intent(out) :: sml
+    integer(SI) :: width  = 800
+    integer(SI) :: height = 800
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -375,11 +379,10 @@ contains
     sml%width  = width
     sml%height = height
     allocate ( sml%f( width, height ) )
-    allocate ( sml%f_copy( width, height ) )
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    skip = PAPERS_RA*0.8
+    skip = PAPERS_RA/2
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
@@ -395,8 +398,9 @@ contains
   end subroutine sml__set_by_program
 
 
-  subroutine sml__set_by_image( filename )
+  subroutine sml__set_by_image( sml, filename )
     character(len=*), intent(in) :: filename
+    type(sml_t), intent(out) :: sml
 
     type(pgm_t) :: pgm
     integer(SI) :: i, j, f_int
@@ -408,7 +412,6 @@ contains
     sml%height = pgm%height
 
     allocate( sml%f( sml%width, sml%height ) )
-    allocate( sml%f_copy( sml%width, sml%height ) )
 
     do j = 1 , sml%height
       do i = 1 , sml%width
@@ -424,13 +427,16 @@ contains
   end subroutine sml__set_by_image
 
 
-  subroutine sml__reset
+  subroutine sml__reset( sml )
+    type(sml_t), intent(out) :: sml
     sml%nstep = 0
     sml%f(:,:) = 0.0_DR
   end subroutine sml__reset
 
 
-  subroutine sml__save
+  subroutine sml__save( sml )
+    type(sml_t), intent(in) :: sml
+
     type(pgm_t) :: pgm
     integer(SI) :: i, j, width, height
     integer(SI), parameter :: PGM_MAX = 3

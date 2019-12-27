@@ -11,24 +11,25 @@ program main
   implicit none
 
   integer(SI) :: n
+  type(sml_t) :: sml
 
   call const__print
 
-  ! call sml__set_by_image('kobe.pgm')
-  call sml__set_by_program
+  ! call sml__set_by_image( sml, 'kobe.pgm' )
+  call sml__set_by_program( sml )
   ! call gol__set_by_image('kobe_bitmap.pbm')
   ! call gol__set_by_image('pentomino_bitmap.pbm')
   ! call gol__set_by_image('start.pbm')
   ! call gol__set_by_program
 
-  call sml__print_summary
-  call sml__save
+  call sml__print_summary( sml )
+  call sml__save( sml )
 
 
   do n = 1 , 200
-    call sml__advance
-    call sml__print_summary
-    call sml__save
+    call sml__advance( sml )
+    call sml__print_summary( sml )
+    call sml__save( sml )
   end do
 
 end program
