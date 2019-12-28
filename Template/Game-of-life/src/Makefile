@@ -1,5 +1,5 @@
 #
-# Makefile for SmoothLife
+# Makefile for test
 #
 
 .SUFFIXES:
@@ -19,37 +19,25 @@ FFLAGS =
 	$(FC) $(FFLAGS) -c $<
 
 
-# OBJS = const.o \
-#        pbm.o \
-#        gol.o \
-#        main.o
-
 OBJS = const.o \
-       pgm.o \
-       sml.o \
+       pbm.o \
+       gol.o \
        main.o
 
-# movie.gif: runme kobe_gray.pgm kobe_bitmap.pbm pentomino_bitmap.pbm start.pbm
-# 	./runme
-# 	convert -delay 5 ../data/*.pbm movie.gif
-
-movie.gif: runme kobe_gray.pgm
+movie.gif: runme kobe_bitmap.pbm pentomino_bitmap.pbm start.pbm
 	./runme
-	convert -delay 5 ../data/*.pgm movie.gif
+	convert -delay 5 ../data/*.pbm movie.gif
 
 runme: main.o
 	$(FC) $(FFLAGS) -o runme $(OBJS)
 
-# main.o: const.o pbm.o gol.o
-main.o: const.o pgm.o sml.o
+main.o: const.o pbm.o gol.o
 
-# gol.o: const.o pbm.o
-
-sml.o: const.o pgm.o
+gol.o: const.o pbm.o
 
 help:
 	echo 'Usage: make && ./runme'
 
 clean:
 	rm -f runme core $(OBJS) *.mod
-	rm -f ../data/*.pgm ../data/*.pbm movie.gif
+	rm -f ../data/*.pbm movie.gif
