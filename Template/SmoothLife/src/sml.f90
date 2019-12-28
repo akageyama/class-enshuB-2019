@@ -12,6 +12,7 @@
 module sml_m
   use const_m
   use pgm_m
+  !$use omp_lib
   implicit none
   private
   public :: sml__advance,  &
@@ -334,6 +335,7 @@ contains
     factor_m = 1.0_DR / ( PI*ri_sq )
     factor_n = 1.0_DR / ( PI*(ra_sq-ri_sq) )
 
+    !$omp parallel do
     do j = PAPERS_RA+1, sml%height-PAPERS_RA
       do i = PAPERS_RA+1, sml%width-PAPERS_RA
         integral_ri = integral( sml_copy, i, j, PAPERS_RI, sheet_ri )
@@ -346,6 +348,7 @@ contains
                      "<sml__advance> s out of range.")
       end do
     end do
+    !$omp end parallel do
 
     call boundary_condition( sml )
 

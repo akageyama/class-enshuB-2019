@@ -15,14 +15,14 @@ program main
 
   call const__print
 
-  call sml__set_by_image( sml, 'sample_face.pgm' )
-  ! call sml__set_by_program( sml )
+  ! call sml__set_by_image( sml, 'sample_face.pgm' )
+  call sml__set_by_program( sml )
 
   call sml__print_summary( sml )
   call sml__save( sml )
 
 
-  do n = 1 , 200
+  do n = 1 , 500
     call sml__advance( sml )
     call sml__print_summary( sml )
     call sml__save( sml )
