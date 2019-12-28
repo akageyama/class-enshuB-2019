@@ -94,8 +94,8 @@ contains
 
     open(FILE_NUM, file=filename, form='formatted', status='replace')
       write(FILE_NUM,'(a)')        image%header
-      write(FILE_NUM,'(i3,1x,i3)') image%width, image%height
-      write(FILE_NUM,'(i3)')       image%max
+      write(FILE_NUM,'(i8,1x,i8)') image%width, image%height
+      write(FILE_NUM,'(i8)')       image%max
       do j = 1 , image%height
         write(FILE_NUM,'(i3,1x)') ( image%whitelevel(i,j), i=1, image%width )
       end do

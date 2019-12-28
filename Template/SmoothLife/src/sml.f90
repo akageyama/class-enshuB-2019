@@ -370,8 +370,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 500
-    integer(SI) :: height = 500
+    integer(SI) :: width  = 400
+    integer(SI) :: height = 400
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -444,7 +444,7 @@ contains
 
     type(pgm_t) :: pgm
     integer(SI) :: i, j, width, height
-    integer(SI), parameter :: PGM_MAX = 3
+    integer(SI), parameter :: PGM_MAX = 100
 
     width  = sml%width
     height = sml%height

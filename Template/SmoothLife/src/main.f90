@@ -22,7 +22,7 @@ program main
   call sml__save( sml )
 
 
-  do n = 1 , 500
+  do n = 1 , 10000
     call sml__advance( sml )
     call sml__print_summary( sml )
     call sml__save( sml )
