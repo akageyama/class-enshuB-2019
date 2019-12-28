@@ -13,7 +13,7 @@ program main
   integer(SI) :: n
   type(sml_t) :: sml
 
-  call const__print
+  ! call const__print
 
   ! call sml__set_by_image( sml, 'sample_face.pgm' )
   call sml__set_by_program( sml )
@@ -22,7 +22,7 @@ program main
   call sml__save( sml )
 
 
-  do n = 1 , 10000
+  do n = 1 , 200
     call sml__advance( sml )
     call sml__print_summary( sml )
     call sml__save( sml )
