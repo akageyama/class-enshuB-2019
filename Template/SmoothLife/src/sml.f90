@@ -64,19 +64,13 @@ contains
     integer(SI) :: nbo ! number of grid points for the bounary overlap
     integer(SI) :: j
 
-    nbo = PAPERS_RA
     width  = sml%width
     height = sml%height
 
-    call assert( width-2*nbo > 0 .and. height-2*nbo > 0,  &
-                "<sml/boundary_condition> nbo is too large" )
-
-    do i = 1, nbo
-      sml%f(i,           :) = sml%f(width-2*nbo+i, :)
-      sml%f(width-nbo+i, :) = sml%f(        nbo+i, :)
-      sml%f(:,           i) = sml%f(:,height-2*nbo+i)
-      sml%f(:,height-nbo+i) = sml%f(:,         nbo+i)
-    end do
+    sml%f(    1,     :) = sml%f(width-1,        :)
+    sml%f(width,     :) = sml%f(      2,        :)
+    sml%f(    :,     1) = sml%f(      :, height-1)
+    sml%f(    :,height) = sml%f(      :,        2)
   end subroutine boundary_condition
 
 
@@ -336,16 +330,24 @@ contains
     factor_n = 1.0_DR / ( PI*(ra_sq-ri_sq) )
 
     !$omp parallel do
-    do j = PAPERS_RA+1, sml%height-PAPERS_RA
-      do i = PAPERS_RA+1, sml%width-PAPERS_RA
-        integral_ri = integral( sml_copy, i, j, PAPERS_RI, sheet_ri )
-        integral_ra = integral( sml_copy, i, j, PAPERS_RA, sheet_ra )
-        papers_m = integral_ri * factor_m
-        papers_n = ( integral_ra - integral_ri ) * factor_n
-        s = papers_function_s( papers_n, papers_m )
-        sml%f(i,j) = s
-        call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
-                     "<sml__advance> s out of range.")
+    do j = 2, sml%height-1
+      do i = 2, sml%width-1
+        !> integral_ri = integral( sml_copy, i, j, PAPERS_RI, sheet_ri )
+        !> integral_ra = integral( sml_copy, i, j, PAPERS_RA, sheet_ra )
+        !> papers_m = integral_ri * factor_m
+        !> papers_n = ( integral_ra - integral_ri ) * factor_n
+        !> s = papers_function_s( papers_n, papers_m )
+        s = ( sml_copy%f(i+1,j  ) + sml_copy%f(i-1,j  )  &
+            + sml_copy%f(i  ,j+1) + sml_copy%f(i  ,j-1) ) / ( sml_copy%f(i,j) + 3 )
+        if ( s >= 0.5_DR .and. s <= 1.0_DR ) then
+          s = 1.0_DR
+        else
+          s = 0.0_DR
+        end if
+        sml%f(i,j) = sml%f(i,j) + 0.1_DR*sml%f(i,j)*(2*s-1)
+        ! sml%f(i,j) = s
+!       call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
+!                    "<sml__advance> s out of range.")
       end do
     end do
     !$omp end parallel do
@@ -370,8 +372,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 400
-    integer(SI) :: height = 400
+    integer(SI) :: width  = 100
+    integer(SI) :: height = 100
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -385,6 +387,7 @@ contains
     sml%f(:,:) = 0.0_DR  ! default zero
 
     skip = PAPERS_RA
+    skip = 1
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
