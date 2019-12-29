@@ -12,7 +12,8 @@
 FC = g95 -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
-FFLAGS = -O5 -fopenmp 
+# FFLAGS = -O5 -fopenmp 
+FFLAGS = -fbounds-check  -O -Wuninitialized
 
 
 .f90.o:

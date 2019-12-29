@@ -282,6 +282,40 @@ contains
                                                 PAPERS_ALPHA_N )
   end function papers_function_s
 
+  function double_sigmoid( x, a, b )
+    real(DR), intent(in) :: x, a, b
+    real(DR) :: double_sigmoid
+
+    real(DR), parameter :: DELTA = 0.01_DR
+    real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
+
+    !                oooooooo
+    !               o|      |o
+    !              o |      | o
+    !    oooooooooo--+------+--oooooooooo--> x
+    !             |  |      |  |
+    !            a1  a2    b1  b2
+
+    real(DR) :: a1, a2, b1, b2
+
+    a1 = a - DELTA/2
+    a2 = a + DELTA/2
+    b1 = b - DELTA/2
+    b2 = b + DELTA/2
+
+    if ( x < a1 ) then
+      double_sigmoid = 0.0_DR
+    else if ( x < a2 ) then
+      double_sigmoid = ( x - a1 ) * DELTA_INV
+    else if ( x < b1 ) then
+      double_sigmoid = 1.0_DR
+    else if ( x < b2 ) then
+      double_sigmoid = 1.0_DR - ( x - b1 ) * DELTA_INV
+    else
+      double_sigmoid = 0.0_DR
+    end if
+  end function double_sigmoid
+
 
 
 !  private
@@ -295,6 +329,7 @@ contains
     integer(SI) :: i, j
     real(DR) :: ra_sq, ri_sq, factor_n, factor_m
     real(DR) :: s, integral_ri, integral_ra
+    real(DR) :: s1, s2
     real(DR) :: papers_m, papers_n
     logical, save :: first_time = .true.
     real(DR), dimension( -PAPERS_RA:PAPERS_RA,  &
@@ -337,15 +372,28 @@ contains
         !> papers_m = integral_ri * factor_m
         !> papers_n = ( integral_ra - integral_ri ) * factor_n
         !> s = papers_function_s( papers_n, papers_m )
-        s = ( sml_copy%f(i+1,j  ) + sml_copy%f(i-1,j  )  &
-            + sml_copy%f(i  ,j+1) + sml_copy%f(i  ,j-1) ) / ( sml_copy%f(i,j) + 3 )
-        if ( s >= 0.5_DR .and. s <= 1.0_DR ) then
-          s = 1.0_DR
-        else
-          s = 0.0_DR
-        end if
-        sml%f(i,j) = sml%f(i,j) + 0.1_DR*sml%f(i,j)*(2*s-1)
-        ! sml%f(i,j) = s
+        !- s = ( sml_copy%f(i-1,j-1) + sml_copy%f(i  ,j-1)  &
+        !-     + sml_copy%f(i+1,j-1) + sml_copy%f(i+1,j  )  &
+        !-     + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
+        !-     + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) ) / ( sml_copy%f(i,j) + 3 )
+        s = ( sml_copy%f(i-1,j-1) + sml_copy%f(i  ,j-1)  &
+            + sml_copy%f(i+1,j-1) + sml_copy%f(i+1,j  )  &
+            + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
+            + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) ) - ( 8 * sml_copy%f(i,j) )
+!        if ( s >= 0.4_DR .and. s <= 0.9_DR ) then
+!          s = 1.0_DR
+!        else
+!          s = 0.0_DR
+!        end if
+        ! s = double_sigmoid( s, 0.5000_DR, 0.90_DR )
+        ! s = double_sigmoid( s, 0.5000_DR, 0.80_DR )
+        s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
+        s2 = double_sigmoid( s, 2.5_DR , 3.5_DR )
+        !< 1sml%f(i,j) = sml%f(i,j) + 0.02_DR*sml%f(i,j)*(2*s-1)
+        !< 1if ( sml%f(i,j) > 1.0_DR ) then
+        !< 1  sml%f(i,j) = 1.0_DR
+        !< 1end if
+        sml%f(i,j) = s1 + s2
 !       call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
 !                    "<sml__advance> s out of range.")
       end do
@@ -372,8 +420,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 100
-    integer(SI) :: height = 100
+    integer(SI) :: width  = 250
+    integer(SI) :: height = 150
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -386,8 +434,7 @@ contains
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    skip = PAPERS_RA
-    skip = 1
+    skip = 10
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0

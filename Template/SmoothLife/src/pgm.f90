@@ -94,10 +94,13 @@ contains
 
     open(FILE_NUM, file=filename, form='formatted', status='replace')
       write(FILE_NUM,'(a)')        image%header
-      write(FILE_NUM,'(i8,1x,i8)') image%width, image%height
-      write(FILE_NUM,'(i8)')       image%max
+      write(FILE_NUM,'(i5,1x,i5)') image%width, image%height
+      write(FILE_NUM,'(i5)')       image%max
       do j = 1 , image%height
-        write(FILE_NUM,'(i3,1x)') ( image%whitelevel(i,j), i=1, image%width )
+        !write(FILE_NUM,'(i3,1x)') ( image%whitelevel(i,j), i=1, image%width )
+        do i = 1 , image%width
+          write(FILE_NUM,'(i3,1x)') image%whitelevel(i,j)
+        end do
       end do
     close(FILE_NUM)
   end subroutine pgm__save
