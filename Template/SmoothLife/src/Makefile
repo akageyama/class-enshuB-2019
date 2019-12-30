@@ -9,11 +9,11 @@
 
 # FC = f90
 # FC = gfortran
-FC = g95 -Wall -O -Wuninitialized -mmacosx-version-min=10.13
+FC = g95 -Wall -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
-# FFLAGS = -O5 -fopenmp 
-FFLAGS = -fbounds-check  -O -Wuninitialized
+FFLAGS = -O5 -fopenmp 
+# FFLAGS = -Wall -fbounds-check  -O -Wuninitialized
 
 
 .f90.o:
