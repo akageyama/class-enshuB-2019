@@ -165,10 +165,12 @@ contains
         !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
         if ( df >=0.0_DR ) then
           ! s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
-          s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
+          ! s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
+          s = double_sigmoid( df,  2.30_DR ,  3.70_DR )
         else
           ! s = double_sigmoid( df, -7.5_DR , -5.5_DR )
-          s = double_sigmoid( df, -7.60_DR , -5.40_DR )
+          ! s = double_sigmoid( df, -7.60_DR , -5.40_DR )
+          s = double_sigmoid( df, -7.7_DR , -5.3_DR )
         end if
         !< sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
         !<                                               ! and diagonal gliders
