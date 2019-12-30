@@ -165,21 +165,19 @@ contains
         !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
         if ( df >=0.0_DR ) then
           ! s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
-          ! s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
-          s = double_sigmoid( df,  2.30_DR ,  3.70_DR )
+          s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
         else
           ! s = double_sigmoid( df, -7.5_DR , -5.5_DR )
-          ! s = double_sigmoid( df, -7.60_DR , -5.40_DR )
-          s = double_sigmoid( df, -7.7_DR , -5.3_DR )
+          s = double_sigmoid( df, -7.60_DR , -5.40_DR )
         end if
         !< sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
         !<                                               ! and diagonal gliders
         !<                                               ! odd/even oscillation.
         !<                                               ! Covers the whole space.
-        !!sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
-        !!                                               ! cases, and vortex-like
-        !!                                               ! object.
-        sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
+        sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
+                                                       ! cases, and vortex-like
+                                                       ! object.
+        !! sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
 
         call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
                      "<sml__advance> sml%f(i,j) out of range.")
