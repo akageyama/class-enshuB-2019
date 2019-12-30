@@ -164,6 +164,7 @@ contains
         !s2 = double_sigmoid( s,  2.5_DR ,  3.5_DR )
         !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
         if ( df >=0.0_DR ) then
+          ! s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
           s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
         else
           ! s = double_sigmoid( df, -7.5_DR , -5.5_DR ) - 1.0_DR
