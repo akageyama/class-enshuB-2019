@@ -200,8 +200,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 500
-    integer(SI) :: height = 500
+    integer(SI) :: width  = 100
+    integer(SI) :: height = 100
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
