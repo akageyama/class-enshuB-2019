@@ -92,7 +92,7 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
-    real(DR), parameter :: DELTA = 0.38_DR
+    real(DR), parameter :: DELTA = 0.41_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
     !                oooooooo
@@ -209,8 +209,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 160
-    integer(SI) :: height = 160
+    integer(SI) :: width  = 140
+    integer(SI) :: height = 140
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
