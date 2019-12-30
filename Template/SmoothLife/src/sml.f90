@@ -163,13 +163,13 @@ contains
         else
           s = double_sigmoid( df, -7.60_DR , -5.40_DR )
         end if
-        !< sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
-        !<                                               ! and diagonal gliders
-        !<                                               ! odd/even oscillation.
-        !<                                               ! Covers the whole space.
-        sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
-                                                       ! cases, and vortex-like
-                                                       ! object.
+        sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
+                                                      ! and diagonal gliders
+                                                      ! odd/even oscillation.
+                                                      ! Covers the whole space.
+        !=sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
+        !=                                               ! cases, and vortex-like
+        !=                                               ! object.
         !!!!!sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
         !!!!sml%f(i,j) = 0.17_DR * sml%f(i,j) + 0.83_DR*s ! Vertical glider
         !!! sml%f(i,j) = 0.20_DR * sml%f(i,j) + 0.80_DR*s ! Vertical glider
@@ -220,10 +220,10 @@ contains
         call random_number(random)  ! 0.0 to 1.0
         do j2 = 0 , skip-1
           do i2 = 0 , skip-1
-!!            if ( .not. ( i+i2 >= 0.3*sml%width .and.  &
-!!                         i+i2 <= 0.7*sml%width .and.  &
-!!                         j+j2 >= 0.3*sml%height .and.  &
-!!                         j+j2 <= 0.7*sml%height ) ) cycle
+            if ( .not. ( i+i2 >= 0.4*sml%width .and.  &
+                         i+i2 <= 0.6*sml%width .and.  &
+                         j+j2 >= 0.4*sml%height .and.  &
+                         j+j2 <= 0.6*sml%height ) ) cycle
             if ( i+i2 <= sml%width .and. &
                  j+j2 <= sml%height ) then
               sml%f( i+i2, j+j2 ) = random
