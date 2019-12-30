@@ -92,7 +92,7 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
-    real(DR), parameter :: DELTA = 0.01_DR
+    real(DR), parameter :: DELTA = 0.36_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
     !                oooooooo
@@ -164,11 +164,13 @@ contains
         !s2 = double_sigmoid( s,  2.5_DR ,  3.5_DR )
         !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
         if ( df >=0.0_DR ) then
-          ! s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
+          !s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
           s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
+          ! s = double_sigmoid( df,  2.20_DR ,  3.80_DR )
         else
-          ! s = double_sigmoid( df, -7.5_DR , -5.5_DR )
+          !s = double_sigmoid( df, -7.5_DR , -5.5_DR )
           s = double_sigmoid( df, -7.60_DR , -5.40_DR )
+          ! s = double_sigmoid( df, -7.80_DR , -5.20_DR )
         end if
         !< sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
         !<                                               ! and diagonal gliders
@@ -177,7 +179,9 @@ contains
         sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
                                                        ! cases, and vortex-like
                                                        ! object.
-        !! sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
+        !!!!!sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
+        !!!!sml%f(i,j) = 0.17_DR * sml%f(i,j) + 0.83_DR*s ! Vertical glider
+        !!! sml%f(i,j) = 0.20_DR * sml%f(i,j) + 0.80_DR*s ! Vertical glider
 
         call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
                      "<sml__advance> sml%f(i,j) out of range.")
@@ -205,8 +209,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 200
-    integer(SI) :: height = 150
+    integer(SI) :: width  = 150
+    integer(SI) :: height = 120
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -219,16 +223,16 @@ contains
 
     sml%f(:,:) = 0.0_DR  ! default zero
 
-    skip = 3
+    skip = 1
     do j = 1 , height, skip
       do i = 1 , width, skip
         call random_number(random)  ! 0.0 to 1.0
         do j2 = 0 , skip-1
           do i2 = 0 , skip-1
-            if ( .not. ( i+i2 >= 0.3*sml%width .and.  &
-                         i+i2 <= 0.7*sml%width .and.  &
-                         j+j2 >= 0.3*sml%height .and.  &
-                         j+j2 <= 0.7*sml%height ) ) cycle
+!!            if ( .not. ( i+i2 >= 0.3*sml%width .and.  &
+!!                         i+i2 <= 0.7*sml%width .and.  &
+!!                         j+j2 >= 0.3*sml%height .and.  &
+!!                         j+j2 <= 0.7*sml%height ) ) cycle
             if ( i+i2 <= sml%width .and. &
                  j+j2 <= sml%height ) then
               sml%f( i+i2, j+j2 ) = random
