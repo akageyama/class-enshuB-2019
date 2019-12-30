@@ -134,6 +134,7 @@ contains
 
     integer(SI) :: i, j
     real(DR) :: s, s1, s2
+    real(DR) :: df
     real(DR) :: papers_m, papers_n
     logical, save :: first_time = .true.
     type(sml_t), save :: sml_copy
@@ -155,17 +156,36 @@ contains
     !$omp parallel do
     do j = 2, sml%height-1
       do i = 2, sml%width-1
-        s = ( sml_copy%f(i-1,j-1) + sml_copy%f(i  ,j-1)  &
-            + sml_copy%f(i+1,j-1) + sml_copy%f(i+1,j  )  &
-            + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
-            + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) ) - ( 8 * sml_copy%f(i,j) )
-        s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
-        s2 = double_sigmoid( s,  2.5_DR ,  3.5_DR )
-        s1 = double_sigmoid( s, -6.4_DR , -4.6_DR )
-        s2 = double_sigmoid( s,  2.4_DR ,  3.5_DR )
-        sml%f(i,j) = s1 + s2
-!       call assert ( s >= 0.0_DR .and. s <= 1.0_DR,  &
-!                    "<sml__advance> s out of range.")
+        df = ( sml_copy%f(i-1,j-1) + sml_copy%f(i  ,j-1)  &
+             + sml_copy%f(i+1,j-1) + sml_copy%f(i+1,j  )  &
+             + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
+             + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) )  &
+             - ( 9 * sml_copy%f(i,j) )
+        !s2 = double_sigmoid( s,  2.5_DR ,  3.5_DR )
+        !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
+        if ( df >=0.0_DR ) then
+          s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
+        else
+          ! s = double_sigmoid( df, -7.5_DR , -5.5_DR ) - 1.0_DR
+          s = double_sigmoid( df, -7.5_DR , -5.5_DR )
+        end if
+        ! sml%f(i,j) = sml%f(i,j) + 0.01_DR*s
+        ! sml%f(i,j) = 0.2_DR * sml%f(i,j) + 0.8_DR*s
+        ! sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s
+        sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s
+        ! sml%f(i,j) = 0.08_DR * sml%f(i,j) + 0.92_DR*s
+
+!        if ( sml%f(i,j) < 0.0_DR ) then
+!          sml%f(i,j) = 0.0_DR
+!        end if
+!        if ( sml%f(i,j) > 1.0_DR ) then
+!          sml%f(i,j) = 1.0_DR
+!        end if
+!        if ( sml%f(i,j) < 0.0_DR .or. sml%f(i,j) > 1.0_DR ) then
+!          print *,'  i,j,sml%f = ', i,j,sml%f(i,j)
+!        end if
+        call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
+                     "<sml__advance> sml%f(i,j) out of range.")
       end do
     end do
     !$omp end parallel do
@@ -191,7 +211,7 @@ contains
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
     integer(SI) :: width  = 200
-    integer(SI) :: height = 200
+    integer(SI) :: height = 150
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -210,9 +230,14 @@ contains
         call random_number(random)  ! 0.0 to 1.0
         do j2 = 0 , skip-1
           do i2 = 0 , skip-1
-            if ( i+i2 <= sml%width .and. &
-                 j+j2 <= sml%height ) then
-              sml%f( i+i2, j+j2 ) = random
+            if ( i+i2 >= 0.3*sml%width .and.  &
+                 i+i2 <= 0.7*sml%width .and.  &
+                 j+j2 >= 0.3*sml%height .and.  &
+                 j+j2 <= 0.7*sml%height ) then
+              if ( i+i2 <= sml%width .and. &
+                   j+j2 <= sml%height ) then
+                sml%f( i+i2, j+j2 ) = random
+              end if
             end if
           end do
         end do
