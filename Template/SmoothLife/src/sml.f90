@@ -92,7 +92,7 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
-    real(DR), parameter :: DELTA = 0.42_DR
+    real(DR), parameter :: DELTA = 0.41_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
     !                oooooooo
@@ -133,10 +133,7 @@ contains
     type(sml_t), intent(inout) :: sml
 
     integer(SI) :: i, j
-    real(DR) :: s, s1, s2
-    real(DR) :: df
-    real(DR) :: papers_m, papers_n
-    logical, save :: first_time = .true.
+    real(DR) :: s, df
     type(sml_t), save :: sml_copy
 
     sml_copy = sml
@@ -161,16 +158,10 @@ contains
              + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
              + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) )  &
              - ( 9 * sml_copy%f(i,j) )
-        !s2 = double_sigmoid( s,  2.5_DR ,  3.5_DR )
-        !s1 = double_sigmoid( s, -6.5_DR , -4.5_DR )
         if ( df >=0.0_DR ) then
-          !s = double_sigmoid( df,  2.5_DR ,  3.5_DR )
           s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
-          ! s = double_sigmoid( df,  2.20_DR ,  3.80_DR )
         else
-          !s = double_sigmoid( df, -7.5_DR , -5.5_DR )
           s = double_sigmoid( df, -7.60_DR , -5.40_DR )
-          ! s = double_sigmoid( df, -7.80_DR , -5.20_DR )
         end if
         !< sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
         !<                                               ! and diagonal gliders
@@ -209,8 +200,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 200
-    integer(SI) :: height = 200
+    integer(SI) :: width  = 140
+    integer(SI) :: height = 140
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int

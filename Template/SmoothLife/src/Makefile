@@ -9,7 +9,7 @@
 
 # FC = f90
 # FC = gfortran
-FC = g95 -mmacosx-version-min=10.13
+FC = g95 -Wall -O -Wuninitialized -mmacosx-version-min=10.13
 
 # FFLAGS = -Wall
 # FFLAGS = -O5 -fopenmp 
