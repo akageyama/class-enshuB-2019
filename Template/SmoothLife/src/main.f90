@@ -16,9 +16,8 @@ program main
   ! call const__print
 
   ! call sml__set_by_image( sml, 'sample_face.pgm', )
-  call sml__set_by_image( sml, '../data/sml.000120.pgm', &
-                               set_nstep=.true. )
-  ! call sml__set_by_program( sml )
+  ! call sml__set_by_image( sml, '../data/sml.000120.pgm', set_nstep=.true. )
+  call sml__set_by_program( sml )
 
   call sml__print_summary( sml )
 
