@@ -23,7 +23,7 @@ program main
 
   if ( sml%nstep==0 ) call sml__save( sml )
 
-  do n = 1 , 100
+  do n = 1 , 2000
     call sml__advance( sml )
     call sml__print_summary( sml )
     call sml__save( sml )

@@ -64,10 +64,15 @@ contains
     width  = sml%width
     height = sml%height
 
-    sml%f(    1,     :) = sml%f(width-1,        :)
-    sml%f(width,     :) = sml%f(      2,        :)
-    sml%f(    :,     1) = sml%f(      :, height-1)
-    sml%f(    :,height) = sml%f(      :,        2)
+    ! sml%f(    1,     :) = sml%f(width-1,        :)
+    ! sml%f(width,     :) = sml%f(      2,        :)
+    ! sml%f(    :,     1) = sml%f(      :, height-1)
+    ! sml%f(    :,height) = sml%f(      :,        2)
+
+    sml%f(    1,     :) = 0.0_DR
+    sml%f(width,     :) = 0.0_DR
+    sml%f(    :,     1) = 0.0_DR
+    sml%f(    :,height) = 0.0_DR
   end subroutine boundary_condition
 
 
@@ -75,6 +80,7 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
+    ! real(DR), parameter :: DELTA = 0.50_DR
     real(DR), parameter :: DELTA = 0.41_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
@@ -177,9 +183,12 @@ contains
   subroutine sml__advance(sml)
     type(sml_t), intent(inout) :: sml
 
-    integer(SI) :: i, j
-    real(DR) :: s, df
+    integer(SI) :: i, j, ni, nj
+    real(DR) :: s, df, neighbor01, neighbor02, sum01, sum02
     type(sml_t), save :: sml_copy
+    ! real(DR), parameter :: WEIGHT02 = 1.0_DR / 9
+    real(DR), parameter :: WEIGHT02 = 0.05_DR
+    real(DR), parameter :: WEIGHT01 = 1.0_DR - WEIGHT02
 
     sml_copy = sml
 
@@ -196,28 +205,43 @@ contains
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
 
     !$omp parallel do
-    do j = 2, sml%height-1
-      do i = 2, sml%width-1
-        df = ( sml_copy%f(i-1,j-1) + sml_copy%f(i  ,j-1)  &
-             + sml_copy%f(i+1,j-1) + sml_copy%f(i+1,j  )  &
-             + sml_copy%f(i+1,j+1) + sml_copy%f(i  ,j+1)  &
-             + sml_copy%f(i-1,j+1) + sml_copy%f(i-1,j  ) )  &
+    do j = 3, sml%height-2
+      do i = 3, sml%width-2
+        sum01 = 0.0_DR
+        do nj = -1, 1
+          do ni = -1, 1
+            if ( ni==0 .and. nj==0 ) cycle
+            sum01 = sum01 + sml_copy%f(i+ni,j+nj)
+          end do
+        end do
+        sum02 = 0.0_DR
+        do ni = -2, 2
+          sum02 = sum02 + sml_copy%f(i+ni,j-2)  &
+                        + sml_copy%f(i+ni,j+2)
+        end do
+        do nj = -1, 1
+          sum02 = sum02 + sml_copy%f(i-2,j+nj)  &
+                        + sml_copy%f(i+2,j+nj)
+        end do
+        neighbor02 = sum02
+        df = sum01 * WEIGHT01 + sum02 * WEIGHT02 &
              - ( 9 * sml_copy%f(i,j) )
         if ( df >=0.0_DR ) then
           s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
         else
           s = double_sigmoid( df, -7.60_DR , -5.40_DR )
         end if
-        sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
-                                                      ! and diagonal gliders
-                                                      ! odd/even oscillation.
-                                                      ! Covers the whole space.
+        !> sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
+        !>                                               ! and diagonal gliders
+        !>                                               ! odd/even oscillation.
+        !>                                               ! Covers the whole space.
         !=sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
         !=                                               ! cases, and vortex-like
         !=                                               ! object.
         !!!!!sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
         !!!!sml%f(i,j) = 0.17_DR * sml%f(i,j) + 0.83_DR*s ! Vertical glider
         !!! sml%f(i,j) = 0.20_DR * sml%f(i,j) + 0.80_DR*s ! Vertical glider
+        sml%f(i,j) = s
 
         call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
                      "<sml__advance> sml%f(i,j) out of range.")
@@ -245,8 +269,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 1000
-    integer(SI) :: height = 1000
+    integer(SI) :: width  = 200
+    integer(SI) :: height = 200
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
