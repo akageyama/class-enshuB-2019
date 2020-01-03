@@ -57,9 +57,18 @@ contains
     !           |       |       |
     !...-o------o-------o-------o-------o-------o-------o
     !   w-6    w-5     w-4     w-3     w-2     w-1      w
-    integer(SI) :: i, width, height
-    integer(SI) :: nbo ! number of grid points for the bounary overlap
-    integer(SI) :: j
+    !
+    !
+    ! When n=2
+    !           1       2       3       4
+    !           o-------o-------o-------o--...
+    !           |       |        
+    !           |       |        
+    !           |       |        
+    !...-o------o-------o-------o-------o
+    !   w-4    w-3     w-2     w-1      w
+    integer(SI) :: i, j, width, height
+    integer(SI) :: nb ! number of grid points for the bounary overlap
 
     width  = sml%width
     height = sml%height
@@ -69,10 +78,12 @@ contains
     ! sml%f(    :,     1) = sml%f(      :, height-1)
     ! sml%f(    :,height) = sml%f(      :,        2)
 
-    sml%f(    1,     :) = 0.0_DR
-    sml%f(width,     :) = 0.0_DR
-    sml%f(    :,     1) = 0.0_DR
-    sml%f(    :,height) = 0.0_DR
+    do i = 1, 2
+      sml%f(        i,         :) = sml%f(width-4+i,         :)
+      sml%f(width-2+i,         :) = sml%f(      2+i,         :)
+      sml%f(        :,         i) = sml%f(        :,height-4+i)
+      sml%f(        :,height-2+i) = sml%f(        :,       2+i)
+    end do
   end subroutine boundary_condition
 
 
