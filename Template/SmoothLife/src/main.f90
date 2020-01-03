@@ -15,13 +15,16 @@ program main
 
   ! call const__print
 
-  ! call sml__set_by_image( sml, 'sample_face.pgm' )
-  call sml__set_by_program( sml )
+  ! call sml__set_by_image( sml, 'sample_face.pgm', )
+  call sml__set_by_image( sml, '../data/sml.000120.pgm', &
+                               set_nstep=.true. )
+  ! call sml__set_by_program( sml )
 
   call sml__print_summary( sml )
-  call sml__save( sml )
 
-  do n = 1 , 1000
+  if ( sml%nstep==0 ) call sml__save( sml )
+
+  do n = 1 , 100
     call sml__advance( sml )
     call sml__print_summary( sml )
     call sml__save( sml )

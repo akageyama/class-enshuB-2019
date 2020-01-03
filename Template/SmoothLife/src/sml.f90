@@ -71,23 +71,6 @@ contains
   end subroutine boundary_condition
 
 
-  function int_to_str6(i) result(str)
-    integer(SI), intent(in) :: i
-    character(len=6) :: str
-    !===============
-    !  Convert an integer into 6 characters.
-    !          i =   10 --> str="000010"
-    !          i =  123 --> str="000123"
-    !          i = -123 --> str="XXXXXX"
-    !===============
-    if ( i < 0 .or. i > 999999 ) then
-      str = 'XXXXXX'
-    else
-      write(str, '(i6.6)') i
-    end if
-  end function int_to_str6
-
-
   function double_sigmoid( x, a, b )
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
@@ -121,6 +104,68 @@ contains
       double_sigmoid = 0.0_DR
     end if
   end function double_sigmoid
+
+
+  function extract_nstep( str_with_nstep_ext ) result( nstep )
+    character(len=*), intent(in) :: str_with_nstep_ext
+                                  ! ext stands for file extension
+    integer(SI) :: nstep 
+    !----------------------------------------------------------
+    ! Purpose: To extract nstep integer in the input string.
+    ! Assumed format of the input:
+    !   str_with_nstep =  '[str_trunk].[nstep_int].[str_extension]'
+    !             e.g., str_with_nstep = 'test/data.001000.pgm'
+    !               then output: nstep = 1000
+    !             e.g., str_with_nstep = 'sample.data.12340.pgm'
+    !               then output: nstep = 12340
+    !----------------------------------------------------------
+    integer :: period ! integer position of the first period 
+                      ! from the tail. e.g., for 'a.pgm', period=4
+    character(len=len(str_with_nstep_ext)) :: str_without_ext
+    character(len=len(str_with_nstep_ext)) :: str_for_nstep
+    period = index( str_with_nstep_ext, '.', back=.true. )
+    call assert( period >= 2 .and. period<=len(str_with_nstep_ext),  &
+                 '<sml/extract_nstep> No extension?' )
+    str_without_ext = str_with_nstep_ext(1:period-1)
+    period = index( str_without_ext, '.', back=.true. )
+    call assert( period >= 2 .and. period<=len(str_without_ext),  &
+                 '<sml/extract_nstep> No nstep?' )
+    str_for_nstep = str_without_ext(period+1:len(str_without_ext))
+    nstep = str_to_int( str_for_nstep )
+  end function extract_nstep
+
+
+  function int_to_str( int ) result(str)
+    integer, intent(in) :: int
+    character(len=20) :: str
+
+    write(str,*) int
+    str = trim(adjustl(str))
+  end function int_to_str
+
+
+  function int_to_str6(i) result(str)
+    integer(SI), intent(in) :: i
+    character(len=6) :: str
+    !===============
+    !  Convert an integer into 6 characters.
+    !          i =   10 --> str="000010"
+    !          i =  123 --> str="000123"
+    !          i = -123 --> str="XXXXXX"
+    !===============
+    if ( i < 0 .or. i > 999999 ) then
+      str = 'XXXXXX'
+    else
+      write(str, '(i6.6)') i
+    end if
+  end function int_to_str6
+
+
+  function str_to_int( str ) result(int)
+    character(len=*), intent(in) :: str
+    integer :: int
+    read(str, *) int
+  end function str_to_int
 
 
 
@@ -200,8 +245,8 @@ contains
 
   subroutine sml__set_by_program( sml )
     type(sml_t), intent(out) :: sml
-    integer(SI) :: width  = 200
-    integer(SI) :: height = 200
+    integer(SI) :: width  = 1000
+    integer(SI) :: height = 1000
 
     integer(SI) :: i, j, i2, j2, skip
     integer(SI) :: some_non_negative_int
@@ -237,9 +282,10 @@ contains
   end subroutine sml__set_by_program
 
 
-  subroutine sml__set_by_image( sml, filename )
+  subroutine sml__set_by_image( sml, filename, set_nstep )
     character(len=*), intent(in) :: filename
     type(sml_t), intent(out) :: sml
+    logical, intent(in), optional :: set_nstep
 
     type(pgm_t) :: pgm
     integer(SI) :: i, j, f_int
@@ -247,6 +293,11 @@ contains
     call pgm__read( pgm, filename )
 
     sml%nstep  = 0
+    if ( present(set_nstep) ) then
+      if ( set_nstep ) then
+        sml%nstep  = extract_nstep( filename )
+      end if
+    end if
     sml%width  = pgm%width
     sml%height = pgm%height
 
@@ -279,6 +330,7 @@ contains
     type(pgm_t) :: pgm
     integer(SI) :: i, j, width, height
     integer(SI), parameter :: PGM_MAX = 100
+    character(len=6) :: str6
 
     width  = sml%width
     height = sml%height
@@ -296,8 +348,9 @@ contains
       end do
     end do
 
+    str6 = int_to_str6(sml%nstep) 
     call pgm__save( pgm,  &
-                    '../data/' // int_to_str6(sml%nstep) // '.pgm' )
+                    '../data/' // 'sml.' // str6 // '.pgm' )
   end subroutine sml__save
 
 end module sml_m
