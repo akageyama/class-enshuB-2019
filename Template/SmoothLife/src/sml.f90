@@ -196,8 +196,6 @@ contains
     integer(SI) :: i, j, ni, nj
     real(DR) :: s, df, neighbor01, neighbor02, sum01, sum02
     type(sml_t), save :: sml_copy
-    ! real(DR), parameter :: WEIGHT02 = 1.0_DR / 9
-    ! real(DR), parameter :: WEIGHT02 = 0.05_DR
     real(DR), parameter :: WEIGHT02 = 0.20_DR
     real(DR), parameter :: WEIGHT01 = 1.0_DR - WEIGHT02
 
@@ -237,22 +235,13 @@ contains
         neighbor02 = sum02
         df = sum01 * WEIGHT01 + sum02 * WEIGHT02 &
              - ( 9 * sml_copy%f(i,j) )
-        if ( df >=0.0_DR ) then
-          s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
-        else
-          s = double_sigmoid( df, -7.40_DR , -5.40_DR )
-        end if
-        !> sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
-        !>                                               ! and diagonal gliders
-        !>                                               ! odd/even oscillation.
-        !>                                               ! Covers the whole space.
-        !=sml%f(i,j) = 0.10_DR * sml%f(i,j) + 0.90_DR*s  ! Vertical glider in some
-        !=                                               ! cases, and vortex-like
-        !=                                               ! object.
-        !!!!!sml%f(i,j) = 0.15_DR * sml%f(i,j) + 0.85_DR*s ! Vertical glider
-        !!!!sml%f(i,j) = 0.17_DR * sml%f(i,j) + 0.83_DR*s ! Vertical glider
-        !!! sml%f(i,j) = 0.20_DR * sml%f(i,j) + 0.80_DR*s ! Vertical glider
-        sml%f(i,j) = s
+!        if ( df >=0.0_DR ) then
+!          s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
+!        else
+!          s = double_sigmoid( df, -7.40_DR , -5.40_DR )
+!        end if
+        sml%f(i,j) = double_sigmoid( df,  2.40_DR ,  3.60_DR )  &
+                   + double_sigmoid( df, -7.40_DR , -5.40_DR )
 
         call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
                      "<sml__advance> sml%f(i,j) out of range.")
