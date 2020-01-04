@@ -91,7 +91,6 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
-    ! real(DR), parameter :: DELTA = 0.50_DR
     real(DR), parameter :: DELTA = 0.41_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
@@ -198,7 +197,8 @@ contains
     real(DR) :: s, df, neighbor01, neighbor02, sum01, sum02
     type(sml_t), save :: sml_copy
     ! real(DR), parameter :: WEIGHT02 = 1.0_DR / 9
-    real(DR), parameter :: WEIGHT02 = 0.05_DR
+    ! real(DR), parameter :: WEIGHT02 = 0.05_DR
+    real(DR), parameter :: WEIGHT02 = 0.20_DR
     real(DR), parameter :: WEIGHT01 = 1.0_DR - WEIGHT02
 
     sml_copy = sml
@@ -240,7 +240,7 @@ contains
         if ( df >=0.0_DR ) then
           s = double_sigmoid( df,  2.40_DR ,  3.60_DR )
         else
-          s = double_sigmoid( df, -7.60_DR , -5.40_DR )
+          s = double_sigmoid( df, -7.40_DR , -5.40_DR )
         end if
         !> sml%f(i,j) = 0.05_DR * sml%f(i,j) + 0.95_DR*s ! Vertical, horizontal,
         !>                                               ! and diagonal gliders
