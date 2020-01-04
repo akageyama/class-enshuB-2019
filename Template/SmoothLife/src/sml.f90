@@ -91,7 +91,7 @@ contains
     real(DR), intent(in) :: x, a, b
     real(DR) :: double_sigmoid
 
-    real(DR), parameter :: DELTA = 0.41_DR
+    real(DR), parameter :: DELTA = 0.50_DR
     real(DR), parameter :: DELTA_INV = 1.0_DR / DELTA
 
     !                oooooooo
@@ -196,7 +196,7 @@ contains
     integer(SI) :: i, j, ni, nj
     real(DR) :: s, df, neighbor01, neighbor02, sum01, sum02
     type(sml_t), save :: sml_copy
-    real(DR), parameter :: WEIGHT02 = 0.20_DR
+    real(DR), parameter :: WEIGHT02 = -0.20_DR
     real(DR), parameter :: WEIGHT01 = 1.0_DR - WEIGHT02
 
     sml_copy = sml
@@ -235,8 +235,10 @@ contains
         neighbor02 = sum02
         df = sum01 * WEIGHT01 + sum02 * WEIGHT02 &
              - ( 9 * sml_copy%f(i,j) )
-        sml%f(i,j) = double_sigmoid( df,  2.40_DR ,  3.60_DR )  &
-                   + double_sigmoid( df, -7.40_DR , -5.40_DR )
+        ! sml%f(i,j) = double_sigmoid( df,  2.40_DR ,  3.60_DR )  &
+        !            + double_sigmoid( df, -7.40_DR , -5.40_DR )
+        sml%f(i,j) = double_sigmoid( df,  2.30_DR ,  3.70_DR )  &
+                   + double_sigmoid( df, -7.60_DR , -5.00_DR )
 
         call assert ( sml%f(i,j) >= 0.0_DR .and. sml%f(i,j) <= 1.0_DR,  &
                      "<sml__advance> sml%f(i,j) out of range.")
